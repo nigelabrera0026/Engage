@@ -7,9 +7,12 @@
 
     ****************/
     require("connect.php");
-
+    session_start();
     /*
         Dev notes: session_start(); carries over all the session.
+
+        VIEW CONTENT WILL BE VIEWED WITH COMMENTS.
+        AND COMMENTS CAN INCLUDE DOCS.
     */
 
 ?>
@@ -24,11 +27,15 @@
         <header>
             <nav>
                 <a href="index.php">Home</a>
-                <a href="login.php">
+                <a href="login.php"> <!-- Change to logout button -->
                     <button type="button">Sign In</button>
                 </a>
             </nav>
         </header>
+        <main>
+            <a href="create_post.php"><button type="submit"></button></a>
+            
+        </main>
         <h1>Test</h1>
     </body>
 </html>
