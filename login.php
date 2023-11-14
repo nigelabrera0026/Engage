@@ -91,9 +91,7 @@
 
     if ($_SERVER['REQUEST_METHOD'] == "POST") {
         // Validation
-        // FIXME! wrong logic
         if(empty($_POST['email']) || empty($_POST['pwd'])) {
-            
             $error[] = "Invalid Fields!";
         
         } else {
@@ -110,6 +108,7 @@
                 $statement->bindValue(':user', $user, PDO::PARAM_STR);
                 $statement->bindValue(':password', $pwd, PDO::PARAM_STR);
                 $statement->execute();
+
                 $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
                 // TODO HASH AND SALT THE PASSWORD
@@ -121,11 +120,18 @@
                 } else {
 
                     $_SESSION['isadmin'] = 1;
-                    $_SESSION['client_id'] = $result['admin_id'];
 
-                    // TODO Save login info using cookie or session
-                    $_SESSION['client'] = $result['email'];
+                    $_SESSION['client_id'] = $result[0]['admin_id'];
+                    $_SESSION['client'] = $result[0]['email'];
                     
+                    // DEBUG DOC
+                    // if(isset($_COOKIE['visit_count'])) {
+                    //     $visit_count = $_COOKIE['visit_count'];
+                    //     $visit_count++;
+                    // } else {
+                    //     $visit_count = 1;
+                    // }
+                    // setcookie('visit_count', $visit_count, time() + 60 * 60);
 
                     // TODO Change this thing.
                     header("Location: Tindex.php");
