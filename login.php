@@ -33,6 +33,32 @@
     require("connect.php");
 
     session_start();
+/*
+    // RE-engineering.
+
+    class User {
+        private $email;
+        private $password;
+
+        public function __construct($email, $password) {
+            $this->email = $email;
+            $this->password = $password;
+        
+        }
+
+        public function getEmail() {
+            return $this->email;
+        
+        }
+
+        public function getPassword() {
+            return $this->password;
+
+        }
+    }
+
+    class
+*/
 
     // Global vars
     $error = [];
@@ -48,18 +74,14 @@
         $domain = explode('@', $email);
 
         if(count($domain) == 2) { // if it's a valid email.
-
             if($domain[1] == "engage.com") {
-                
                 return true;
 
             } else {
-
                 return false;
 
             }
         } else {
-
             global $error;
             $error[] = "Invalid Email format!";
 
@@ -80,11 +102,7 @@
             $pwd = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
             if(User_or_admin($user)) { // User or Admin
-
                 $query = "SELECT admin_id, email, password FROM admins WHERE email = :user AND password = :password";
-                // echo "it passed here in line 82";
-
-                $is_admin = true; 
 
                 // Email Validation
                 // Preparation, Binding, Execution, and Retrieval
@@ -102,14 +120,8 @@
     
                 } else {
 
-                    if($is_admin) {
-                        $_SESSION['isadmin'] = 1;
-                        $_SESSION['client_id'] = $result['admin_id'];
-                    
-                    } else {
-                        $_SESSION['client_id'] = $result['user_id'];
-                    
-                    }
+                    $_SESSION['isadmin'] = 1;
+                    $_SESSION['client_id'] = $result['admin_id'];
 
                     // TODO Save login info using cookie or session
                     $_SESSION['client'] = $result['email'];
@@ -128,20 +140,16 @@
                 $statement->bindValue(':user', $user, PDO::PARAM_STR);
                 $statement->bindValue(':password', $pwd, PDO::PARAM_STR);
                 $statement->execute();
-                $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+                $result = $statement->fetch();
 
-                if(!$result || !isset($result[0]['password'])) {
-                    $error[] = "Invalid Credentials! part 2";
+                if(!$result || !isset($result['password'])) {
+                    $error[] = "Invalid Credentials! part 2"; //TODO: CHANGE THIS THING ALSO
     
-                } else {
+                } else { 
                     $_SESSION['client'] = $user;
-
-                    if($is_admin) {
-                        $_SESSION['isadmin'] = 1;
-    
-                    }
-
-                    header("Location: user_index.php");
+                    $_SESSION['client_id'] = $result['user_id'];
+                    
+                    header("Location: Tindex.php");
                     exit();
                 }
             }
