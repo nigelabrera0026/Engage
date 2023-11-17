@@ -27,12 +27,23 @@ function load() {
             reader.readAsDataURL(input.files[0]);
         }
     }
-
+    
     // Trigger the function when a file is selected
     let imageCoverInput = document.getElementById("image_cover");
     if (imageCoverInput) {
         imageCoverInput.addEventListener("change", function () {
             readURL(this);
+        });
+        
+    }
+
+    // Function to remove the image
+    let removeImageButton = document.getElementById("remove_image");
+    if(removeImageButton) {
+        removeImageButton.addEventListener("click", () => {
+            document.getElementById("image_preview").src = '#';
+            document.getElementById('image_preview').style.display = 'none';
+            document.getElementById('image_cover').value = '';
         });
     }
 }

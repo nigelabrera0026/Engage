@@ -11,10 +11,8 @@
     ADD LINK TO REGISTER (not in requirements but need it)
 
     IN PROGRESS
-    ADD logic if it's user or if it's admin (TO BE TESTED)
-
+ 
     DONE    
-    Database Structure Integration
 
     LOGIN PAGE (General User, and Admin user)
     Logic: Differentiate using email
@@ -23,11 +21,8 @@
 
     DEV NOTES {
         ADMIN CAN BE THE ONLY ONE WHO CAN CHANGE ANYONE'S COMMENT'S OR POST'S.
-
         LOGGED USER
     }
-
-    add client_id
     */
 
     require("connect.php");
@@ -59,6 +54,19 @@
 
     class
 */
+
+
+
+    /*
+    TODO
+    Hash password for new registered users or admin.
+    function hashPassword($password) {
+        return password_hash($password, PASSWORD_DEFAULT);
+    }  
+
+    Verify the new logged in user to the password
+    password_verify($password, $user["password"])
+    */
 
     // Global vars
     $error = [];
@@ -139,6 +147,7 @@
 
                 }
             } else {
+                
                 $query = "SELECT email, password FROM users WHERE email = :user AND password = :password";
 
                 // Preparation, Binding, Execution, and Retrieval

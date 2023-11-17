@@ -10,17 +10,24 @@
     session_start();
 
     /**
-     * LAST TASK:
-     * TODO PROMPT IMAGE WHEN CLICKED UPLOADED.
+     * TODO If title exists then do not insert. DONE
+     * Insert Valid information to be tested.
      * 
-     * FIX INDEX:
+     * 
+     * FIXME Logic!
+     * - Images are optional. DONE
+     * Pages can still be created and updated without adding an image.
+     * 
+     * - Uploads that pass this "image-ness" test are moved to an uploads folder 
+     * and with their filename added to a row in an images table. (TBT)
+     * 
      */
 
     // Global Var
     $error = [];
 
     /**
-     * Retrieves id of the user
+     * Retrieves id of the user.
      * @param db PHP Data Object to use to SQL queries.
      * @return result Fetched user or admin id from the database.
      */
@@ -59,15 +66,31 @@
         $statement->bindValue(':genre_name', $genre_name, PDO::PARAM_STR);
         $statement->execute();
         $result = $statement->fetch();
-        return $result['genre_id'];
+        return $result['genre_id']; // TODO FIXME 
 
+    }
+
+    /**
+     * Retrieves Title, to be used to verify its existence.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param title The title's name to be verified, retrieved from user input.
+     * @return result[title] The hash value of the title. Returns null if it doesn't exists.
+     */
+    function verify_title($db, $title) {
+        $query = "SELECT title FROM contents WHERE title = :title";
+
+        $statement = $db->prepare($query);
+        $statement->bindValue(':title', $title, PDO::PARAM_STR);
+        $statement->execute();
+        $result = $statement->fetch();
+        return $result['title'];
     }
     
     /**
      * Initialize file path
      * @param original_filename The original name of the uploaded content.
-     * @param upload_subfolder_name The initialized upload subfolder name
-     * @return path_segments The proper format for the path
+     * @param upload_subfolder_name The initialized upload subfolder name.
+     * @return path_segments The proper format for the path.
      */
     function file_upload_path($original_filename, $upload_subfolder_name = 'uploads') {
         $current_folder = dirname(__FILE__);
@@ -83,7 +106,7 @@
     }
 
     /**
-     * Validates file type and mime type
+     * Validates file type and mime type.
      * @param temporary_path Location of the image stored temporarily.
      * @param new_path Location of the new path for the image.
      * @return file_extension_is_valid Returns Boolean.
@@ -108,14 +131,7 @@
 
         if($_SERVER['REQUEST_METHOD'] == "POST"){
         
-            if(empty($_POST['song_name']) || empty($_POST['song_genre'] 
-            || empty($_FILES['image_cover'])) || empty($_FILES['song_file'])) {
-                
-                $song_name_empt = empty($_POST['song_name']);
-                $song_genre_empt = empty($_POST['song_genre']);
-                $song_img_empt = empty($_POST['image_cover']);
-                $song_file_empt = empty($_POST['song_file']);
-
+            if(empty($_POST['song_name']) || empty($_POST['song_genre']) || empty($_FILES['song_file'])) {
                 $error[] = "Invalid Empty Field";
 
             } else {
@@ -131,9 +147,14 @@
                     $statement = $db->prepare($query);
                     $statement->bindValue(':genre_name', strtolower($genre_name));
                     $statement->execute();
+
+                    $fetch_query = "SELECT genre_id FROM genres WHERE :genre_name = genre_name";
+                    $statement = $db->prepare($query);
+                    $statement->bindValue(':genre_name', strtolower($genre_name));
+                    $statement->execute();
                     $result = $statement->fetch(); 
-    
-                    $genre_id = $result['genre_id'];
+                    $genre_id = $result['genre_id']; 
+                
     
                 } else { // Retrieve genre id 
                     $query = "SELECT genre_id FROM genres WHERE :genre_name = genre_name";
@@ -143,7 +164,7 @@
                     $statement->execute();
                     $result = $statement->fetch(); 
                     $genre_id = $result['genre_id']; 
-                    $error[] = $genre_id; 
+                    
                 }
                 
                 // File upload pointers
@@ -153,100 +174,219 @@
                 $upload_error_detected = isset($_FILES['image_cover']) && ($_FILES['image_cover']['error'] > 0) 
                 && isset($_FILES['song_file']) && ($_FILES['song_file']['error'] > 0);
     
-    
-                // If the user is an admin
-                if(isset($_SESSION['isadmin'])){ 
-            
-                    $query = "INSERT INTO contents(admin_id, genre_id, images, song_file, title) 
-                    VALUES (:admin_id, :genre_id, :images, :song_file, :title)";
-    
-                    // Filtration and sanitization
-                    $client_id = filter_var($user_id, FILTER_SANITIZE_NUMBER_INT);
-                    $title = filter_var($_POST['song_name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    
-                    // image and song file 
-                    $image_temp_path = $_FILES['image_cover']['tmp_name'];
-                    $song_temp_path = $_FILES['song_file']['tmp_name'];
-    
-                    $image_name = $_FILES['image_cover']['name'];
-                    $song_name = $_FILES['song_file']['name'];
-    
-                    $image_upload_path = file_upload_path($image_name);
-                    $song_upload_path = file_upload_path($song_name);
-    
-                    if(file_is_valid($image_temp_path, $image_upload_path) 
-                    && file_is_valid($song_temp_path, $song_upload_path)){
-                
-                        move_uploaded_file($image_temp_path, $image_upload_path);
-                        move_uploaded_file($song_temp_path, $song_upload_path);
-    
-                        $image_content = $_FILES['image_cover'];
-                        $song_content = $_FILES['song_file'];
-    
-    
-                        // Preparation, Binding, Execution
-                        $statement = $db->prepare($query);
-                        
-                        $statement->bindValue(':admin_id', $client_id, PDO::PARAM_INT);
+                // Pointer for image existence
+                $image_upload_detected = isset($_FILES['image_cover']) && ($_FILES['image_cover']['error'] === 0);
+                $image_error_detected = ($_FILES['image_cover']['error'] > 0);
 
+
+                // Filtration and sanitization
+                $client_id = filter_var($user_id, FILTER_SANITIZE_NUMBER_INT);
+                $title = filter_var($_POST['song_name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+                // Verifies existence of title.
+                if(empty(verify_title($db, $title))) {
+                    // If the user is an admin
+                    if(isset($_SESSION['isadmin'])){ 
+                        // Image is set
+                        if($image_upload_detected) {
+                            $query = "INSERT INTO contents(admin_id, genre_id, images, image_name, song_file, title) 
+                            VALUES (:admin_id, :genre_id, :images, :image_name, :song_file, :title)";
+
+                            // Image
+                            $image_temp_path = $_FILES['image_cover']['tmp_name'];
+                            $image_name = $_FILES['image_cover']['name'];
+
+                            $image_upload_path = file_upload_path($image_name);
                         
-                        $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
-                        $statement->bindValue(':images', file_get_contents($image_upload_path), PDO::PARAM_LOB);
-                        $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);                        
-                        $statement->bindValue(':title', $title, PDO::PARAM_STR);
-    
-                        if($statement->execute()) {
-                            header('Location: Tindex.php');
-                            exit();
+                        } else { // If they don't want to upload image.
+                            $query = "INSERT INTO contents(admin_id, genre_id, song_file, title)
+                            VALUES (:admin_id, :genre_id, :song_file, :title)";
+
                         }
+                        
+                        // Audio File
+                        $song_temp_path = $_FILES['song_file']['tmp_name'];
+                        $song_name = $_FILES['song_file']['name'];
+                        
+                        $song_upload_path = file_upload_path($song_name);
+                        
 
+                        if(!$image_upload_detected) {
+                            if(file_is_valid($song_temp_path, $song_upload_path)) {
+                                move_uploaded_file($song_temp_path, $song_upload_path);
+
+                                $song_content = $_FILES['song_file'];
+
+                                // Preparation, Binding, Execution
+                                $statement = $db->prepare($query);
+                                
+                                $statement->bindValue(':admin_id', $client_id, PDO::PARAM_INT);
+                                $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
+                                $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);                        
+                                $statement->bindValue(':title', $title, PDO::PARAM_STR);
+        
+                                if($statement->execute()) {
+                                    header('Location: Tindex.php');
+                                    exit();
+                                }                            
+                            } else {
+                                $error[] = "Error: Invalid file type for audio";
+
+                            }
+                        } elseif(file_is_valid($image_temp_path, $image_upload_path) 
+                        && file_is_valid($song_temp_path, $song_upload_path)){
+                    
+                            move_uploaded_file($image_temp_path, $image_upload_path);
+                            move_uploaded_file($song_temp_path, $song_upload_path);
+        
+                            $image_content = $_FILES['image_cover'];
+                            $image_name = $_FILES['image_cover']['name'];
+                            $song_content = $_FILES['song_file'];
+        
+        
+                            // Preparation, Binding, Execution
+                            $statement = $db->prepare($query);
+                            
+                            $statement->bindValue(':admin_id', $client_id, PDO::PARAM_INT);
+                            $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
+                            $statement->bindValue(':images', file_get_contents($image_upload_path), PDO::PARAM_LOB);
+                            $statement->bindValue(':image_name', $image_name, PDO::PARAM_STR);
+                            $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);                        
+                            $statement->bindValue(':title', $title, PDO::PARAM_STR);
+        
+                            if($statement->execute()) {
+                                header('Location: Tindex.php');
+                                exit();
+                            }
+
+                        } else {
+                            $error[] = "Error: Invalid file type or mime type for either image or song file.";
+        
+                        }
                     } else {
-                        $error[] = "Error: Invalid file type or mime type for either image or song file.";
-    
+                        // Image is set
+                        if($image_upload_detected) {
+                            $query = "INSERT INTO contents(genre_id, user_id, images, image_name, song_file, title) 
+                            VALUES ( :genre_id, :user_id, :images, :image_name, :song_file, :title)";
+
+                            // Image
+                            $image_temp_path = $_FILES['image_cover']['tmp_name'];
+                            $image_name = $_FILES['image_cover']['name'];
+
+                            $image_upload_path = file_upload_path($image_name);
+                        
+                        } else { // If they don't want to upload image.
+                            $query = "INSERT INTO contents(genre_id, user_id, song_file, title)
+                            VALUES (:genre_id, :user_id, :song_file, :title)";
+
+                        }
+                        
+                        // Audio File
+                        $song_temp_path = $_FILES['song_file']['tmp_name'];
+                        $song_name = $_FILES['song_file']['name'];
+                        
+                        $song_upload_path = file_upload_path($song_name);
+                        
+
+                        if(!$image_upload_detected) {
+                            if(file_is_valid($song_temp_path, $song_upload_path)) {
+                                move_uploaded_file($song_temp_path, $song_upload_path);
+
+                                $song_content = $_FILES['song_file'];
+
+                                // Preparation, Binding, Execution
+                                $statement = $db->prepare($query);
+                                
+                                $statement->bindValue(':user_id', $client_id, PDO::PARAM_INT);
+                                $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
+                                $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);                        
+                                $statement->bindValue(':title', $title, PDO::PARAM_STR);
+        
+                                if($statement->execute()) {
+                                    header('Location: Tindex.php');
+                                    exit();
+                                }                            
+                            } else {
+                                $error[] = "Error: Invalid file type for audio";
+
+                            }
+                        } elseif(file_is_valid($image_temp_path, $image_upload_path) 
+                        && file_is_valid($song_temp_path, $song_upload_path)){
+                    
+                            move_uploaded_file($image_temp_path, $image_upload_path);
+                            move_uploaded_file($song_temp_path, $song_upload_path);
+        
+                            $image_content = $_FILES['image_cover'];
+                            $image_name = $_FILES['image_cover']['name'];
+                            $song_content = $_FILES['song_file'];
+        
+        
+                            // Preparation, Binding, Execution
+                            $statement = $db->prepare($query);
+                            
+                            $statement->bindValue(':user_id', $client_id, PDO::PARAM_INT);
+                            $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
+                            $statement->bindValue(':images', file_get_contents($image_upload_path), PDO::PARAM_LOB);
+                            $statement->bindValue(':image_name', $image_name, PDO::PARAM_STR);
+                            $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);                        
+                            $statement->bindValue(':title', $title, PDO::PARAM_STR);
+        
+                            if($statement->execute()) {
+                                header('Location: Tindex.php');
+                                exit();
+                            }
+
+                        } else {
+                            $error[] = "Error: Invalid file type or mime type for either image or song file.";
+        
+                        }
+                        // Revert Code Dump
+                        // $query = "INSERT INTO contents(genre_id, user_id, images, song_file, title) 
+                        // VALUES (:genre_id, :user_id, :images, :song_file, :title)";
+        
+                        // // Filtration and sanitization
+                        // $client_id = filter_var($user_id, FILTER_SANITIZE_NUMBER_INT);
+                        // $title = filter_var($_POST['song_name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        
+                        // // Filtration of image and song file 
+                        // $image_temp_path = $_FILES['image_cover']['tmp_name'];
+                        // $song_temp_path = $_FILES['song_file']['tmp_name'];
+        
+                        // $image_name = $_FILES['image_cover']['name'];
+                        // $song_name = $_FILES['song_file']['name'];
+        
+                        // $image_upload_path = file_upload_path($image_name);
+                        // $song_upload_path = file_upload_path($song_name);
+        
+                        // if(file_is_valid($image_temp_path, $image_upload_path) 
+                        // && file_is_valid($song_temp_path, $song_upload_path)){
+                    
+                        //     move_uploaded_file($image_temp_path, $image_upload_path);
+                        //     move_uploaded_file($song_temp_path, $song_upload_path);
+        
+                        //     $image_content = $_FILES['image_cover'];
+                        //     $song_content = $_FILES['song_file'];
+        
+                        //     // Preparation, Binding, Execution
+                        //     $statement = $db->prepare($query);
+                            
+                        //     $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
+                        //     $statement->bindValue(':user_id', $client_id, PDO::PARAM_INT);
+                        //     $statement->bindValue(':images', file_get_contents($image_upload_path), PDO::PARAM_LOB);
+                        //     $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);
+                        //     $statement->bindValue(':title', $title, PDO::PARAM_STR);
+                        //     if($statement->execute()) {
+                        //         header('Location: Tindex.php');
+                        //         exit();
+                        //     }
+                        // } else {
+                        //     $error[] = "Error: Invalid file type or mime type for either image or song file.";
+        
+                        // }
                     }
                 } else {
-                    $query = "INSERT INTO contents(genre_id, user_id, images, song_file, title) 
-                    VALUES (:genre_id, :user_id, :images, :song_file, :title)";
-    
-                    // Filtration and sanitization
-                    $client_id = filter_var($user_id, FILTER_SANITIZE_NUMBER_INT);
-                    $title = filter_var($_POST['song_name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    
-                    // Filtration of image and song file 
-                    $image_temp_path = $_FILES['image_cover']['tmp_name'];
-                    $song_temp_path = $_FILES['song_file']['tmp_name'];
-    
-                    $image_name = $_FILES['image_cover']['name'];
-                    $song_name = $_FILES['song_file']['name'];
-    
-                    $image_upload_path = file_upload_path($image_name);
-                    $song_upload_path = file_upload_path($song_name);
-    
-                    if(file_is_valid($image_temp_path, $image_upload_path) 
-                    && file_is_valid($song_temp_path, $song_upload_path)){
-                
-                        move_uploaded_file($image_temp_path, $image_upload_path);
-                        move_uploaded_file($song_temp_path, $song_upload_path);
-    
-                        $image_content = $_FILES['image_cover'];
-                        $song_content = $_FILES['song_file'];
-    
-                        // Preparation, Binding, Execution
-                        $statement = $db->prepare($query);
-                        
-                        $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
-                        $statement->bindValue(':user_id', $client_id, PDO::PARAM_INT);
-                        $statement->bindValue(':images', file_get_contents($image_upload_path), PDO::PARAM_LOB);
-                        $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);
-                        $statement->bindValue(':title', $title, PDO::PARAM_STR);
-                        if($statement->execute()) {
-                            header('Location: Tindex.php');
-                            exit();
-                        }
-                    } else {
-                        $error[] = "Error: Invalid file type or mime type for either image or song file.";
-    
-                    }
+                    $error[] = "Error: Music file exists! no duplication";
+
                 }
             }
         }
@@ -263,33 +403,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="./scripts/create_post_scripts.js"></script>
         <title>New Content</title>
-        <!-- <script>
-            document.addEventListener("DOMContentLoaded", load);
-
-            function load() {
-                // Function to display image preview
-                function readURL(input) {
-                    if (input.files && input.files[0]) {
-                        let reader = new FileReader();
-
-                        reader.onload = function (e) {
-                            document.getElementById('image_preview').src = e.target.result;
-                            document.getElementById('image_preview').style.display = 'block';
-                        };
-
-                        reader.readAsDataURL(input.files[0]);
-                    }
-                }
-
-                // Trigger the function when a file is selected
-                let imageCoverInput = document.getElementById("image_cover");
-                if (imageCoverInput) {
-                    imageCoverInput.addEventListener("change", function () {
-                        readURL(this);
-                    });
-                }
-            }
-        </script> -->
     </head>
     <body>
         <!-- Template for Data to be created -->
@@ -303,7 +416,7 @@
                             <button type="button">Sign In</button>
                         </a>        
                     </li>
-                    <?php // logout ?>
+                    <?php // TODO logout ?>
                     <li><a href="create_post.php">New Post</a></li>
                 </ul>
             </nav>
@@ -329,6 +442,7 @@
                             <img id="image_preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; display: none;">
                             <label for="image_cover">Image</label> <!-- prompt image -->
                             <input type="file" name="image_cover" id="image_cover" accept="image/*"/>
+                            <button type="button" id="remove_image" style="display: block;">Remove Image</button>
                         </div>
                         <div>
                             <label for="audio">Song</label>
