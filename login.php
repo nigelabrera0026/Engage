@@ -26,7 +26,7 @@
     */
 
     require("connect.php");
-
+    require("library.php");
     session_start();
 /*
     // RE-engineering.
@@ -72,32 +72,22 @@
     $error = [];
     $is_admin = false;
 
-    /**
-     * Slicing the email and checking if it's admin or not.
-     * @param email retrieves the email to be sliced.
-     * @return bool 
-     */
-    function User_or_admin($email) {
-        // Retrieves 2 parts of the param.
-        $domain = explode('@', $email);
-
-        if(count($domain) == 2) { // if it's a valid email.
-            if($domain[1] == "engage.com") {
-                return true;
-
-            } else {
-                return false;
-
-            }
+    function retrieve_hashed_pwd($email) {
+        if(user_or_admin($email)) {
+            $query = "SELECT * FROM admins WHERE email = :email";
         } else {
-            global $error;
-            $error[] = "Invalid Email format!";
-
+            $query = "SELECT * FROM users WHERE email = :email";
         }
+
+        $statement = $db->prepare($query);
+        $statement->bindValue(':email', $email, PDO::PARAM_STR);
+        $result = $statement->execute();
+        return $result['password'];
     }
 
 
-    if ($_SERVER['REQUEST_METHOD'] == "POST") {
+
+    if($_SERVER['REQUEST_METHOD'] == "POST") {
         // Validation
         if(empty($_POST['email']) || empty($_POST['pwd'])) {
             $error[] = "Invalid Fields!";
@@ -107,7 +97,7 @@
             $user = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
             $pwd = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-            if(User_or_admin($user)) { // User or Admin
+            if(user_or_admin($user)) { // User or Admin
                 $query = "SELECT admin_id, email, password FROM admins WHERE email = :user AND password = :password";
 
                 // Email Validation
@@ -119,12 +109,15 @@
 
                 $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-                // TODO HASH AND SALT THE PASSWORD
                 // If results returned correct information then
-                if(!$result || !isset($result[0]['password'])) {
+                if(!$result) {
                     // TODO EDIT ERROR MESSAGE
                     $error[] = "Invalid Credentials! part 1";
-    
+                
+                // De-hashing password
+                } elseif(!password_verify($result[0]['password'], retrieve_hashed_pwd($email[0]['email']))) {
+                    $error[] = "Invalid Password!";
+
                 } else {
 
                     $_SESSION['isadmin'] = 1;
@@ -157,9 +150,14 @@
                 $statement->execute();
                 $result = $statement->fetch();
 
-                if(!$result || !isset($result['password'])) {
-                    $error[] = "Invalid Credentials! part 2"; //TODO: CHANGE THIS THING ALSO
-    
+                if(!$result) {
+                    // TODO EDIT ERROR MESSAGE
+                    $error[] = "Invalid Credentials! part 1";
+                
+                // De-hashing password
+                } elseif(!password_verify($result[0]['password'], retrieve_hashed_pwd($email[0]['email']))) {
+                    $error[] = "Invalid Password!";
+
                 } else { 
                     $_SESSION['client'] = $user;
                     $_SESSION['client_id'] = $result['user_id'];
@@ -189,6 +187,13 @@
                 </ul>
             </div>
         <?php endif ?>
+        <div>
+            <nav>
+                <ul> <!-- Check if there's a milestone for adding stuff here. if not then it's redundancy -->
+                    <a href="register.php"><button type="button">Register</button></a>
+                </ul>
+            </nav>
+        </div>
         <div>
             <form method="post" action="login.php">
                 <label for="email">Email</label>

@@ -57,8 +57,7 @@
         $statement->bindValue(':genre_name', $genre_name, PDO::PARAM_STR);
         $statement->execute();
         $result = $statement->fetch();
-        return $result['genre_id']; // TODO FIXME 
-
+        return $result['genre_id']; 
     }
 
     /**
@@ -113,7 +112,7 @@
      * @return mime_type_is_valid Returns Boolean.
      */
     function file_is_valid($temporary_path, $new_path) {
-        $allowed_mime_types = ['image/jpeg', 'image/png', 'audio/mpeg'];
+        $allowed_mime_types = ['image/jpg','image/jpeg', 'image/png', 'audio/mpeg'];
         $allowed_file_extension = ['jpg', 'jpeg', 'png', 'mp3'];
 
         $actual_file_extension = pathinfo($new_path, PATHINFO_EXTENSION);
@@ -354,7 +353,7 @@
             <nav>
                 <ul>
                     <li>Engage</li> <!-- Logo -->
-                    <li><a href="index.php">Home</a></li>
+                    <li><a href="Tindex.php">Home</a></li>
                     <li>
                         <a href="login.php">
                             <button type="button">Sign In</button>

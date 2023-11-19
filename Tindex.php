@@ -37,14 +37,38 @@
     Control flow for Sortation
     */
 
-    // If page reloads
-    $query = "SELECT * FROM contents"; 
+    // Logic for user profile.php
+    // if(isset($_SESSION['isadmin'])) {
+    //     $query = "SELECT * FROM contents WHERE "
+    // } elseif(isset($_SESSION['client'])) {
+
+    // } else {
+
+    // }
+
+    function getUser($client) {
+        $domain = explode('@', $client);
+
+        return $domain[0];
+    }
+
+    function identify_client($id) {
+        if(isset($id['admin_id'])) {
+            return true;
+        
+        } else {
+            return false;
+        }
+    }
+
+
+    $query = "SELECT * FROM contents LIMIT 5"; 
 
     $statement = $db->prepare($query);
-    $results = $statement->execute();
+    $statement->execute();
     
     // use hash $results[0][]
-    // $results->fetchAll();
+    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
     // TODO: LIMIT {dynamic} 
 
@@ -62,15 +86,49 @@
                 <ul>
                     <li>Engage</li> <!-- Logo -->
                     <li><a href="index.php">Home</a></li>
-                    <li>
-                        <a href="login.php">
-                            <button type="button">Sign In</button>
-                        </a>        
-                    </li>
+                    <?php if(isset($_SESSION['client'])): ?>
+                        <li>
+                            <a href="logout.php">
+                                <button type="button">Log out</button>
+                            </a>
+                        </li>
+                        <li><a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a></li>
+                    <?php else: ?>
+                        <li>
+                            <a href="login.php">
+                                <button type="button">Sign In</button>
+                            </a> 
+                        </li>   
+                    <?php endif ?>
                 </ul>
             </nav>
         </header>
         <main>
+            <div>
+                <nav>
+                    <ul> <!-- Check if there's a milestone for adding stuff here. if not then it's redundancy -->
+                        <?php if(isset($_SESSION['isadmin'])): ?> <? // Linking? ?>
+                            <li>
+                                <a href="create_post.php">
+                                    <button type="button">Create Post</button>
+                                </a>
+                            </li>
+                        <?php elseif(isset($_SESSION['client'])): ?>
+                            <li>
+                                <a href="create_post.php">
+                                    <button type="button">Create Post</button>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li>
+                                <a href="#"><!-- Register?  -->
+                                    <button type="button">Join Us!</button>
+                                </a>
+                            </li>
+                        <?php endif ?>
+                    </ul>
+                </nav>
+            </div>
             <form action="Tindex.php" method="post">
                 <fieldset>
                     <legend>Contents</legend>
@@ -97,10 +155,78 @@
             <!-- Showing the contents -->
             <!-- Verify if user or admin exists -->
             <!-- Do non user first -->
-            <div>
-                <?php if(isset($_SESSION['isadmin'])):?>
-                    <div></div>
-                <?php //elseif(isset($_SESSION['']) ?>
+            <div> <!-- TODO FIXME -->
+                <?php if(isset($_SESSION['isadmin'])):?> <!-- Checks if it's able to edit posts from things-->
+                    <div>
+                        <?php foreach($results as $content):?>
+                            <div>
+                                <h2><?= $content['title'] ?></h2>
+                                <!-- TODO Not sure how this link will work -->
+                                <a href="edit.php?<?php identify_client($content) ? 'admin_id='$content['admin_id'] : 'user_id='$content['user_id'] ?>">
+                                    <button type="button">Edit</button>
+                                </a>
+                                <?php if(isset($content['images'])): ?>
+                                    <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
+                                    alt="<?= $content['image_name'] ?>"/>
+                                <?php else: ?>
+                                    <!-- Add the no image picture -->
+                                    <img src="./images/no_image.jpg" alt="No image available" />
+                                <?php endif ?>
+                                <audio controls>
+                                    <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/*">
+                                </audio>
+                                <p>Posted By: <?= getUser($_SESSION['client']) ?></p>
+                            </div>
+                        <?php endforeach ?>
+                    </div>
+                <?php elseif(isset($_SESSION['client_id'])): ?>
+                    <div>
+                        <?php foreach($results as $content):?>
+                            <div>
+                                <h2><?= $content['title'] ?></h2>
+                                <!-- TODO Not sure how this link will work -->
+                                <?php if($_SESSION['client_id'] == $content['user_id']): ?>
+                                    <a href="edit.php?user_id=<?=$content['user_id']?>">
+                                        <button type="button">Edit</button>
+                                    </a>
+                                <?php endif ?>
+                                <?php if(isset($content['images'])): ?>
+                                    <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
+                                    alt="<?= $content['image_name'] ?>"/>
+                                <?php else: ?>
+                                    <!-- Add the no image picture -->
+                                    <img src="./images/no_image.jpg" alt="No image available" />
+                                <?php endif ?>
+                                <audio controls>
+                                    <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/*">
+                                </audio>
+                                <p>Posted By: <?= getUser($_SESSION['client']) ?></p>
+                            </div>
+                        <?php endforeach ?>
+                    </div>
+                <?php else: ?>
+                    <div>
+                        <?php foreach($results as $content):?>
+                            <div>
+                                <h2><?= $content['title'] ?></h2>
+                                <!-- TODO Not sure how this link will work -->
+                                <a href="edit.php?<?php identify_client($content) ? 'admin_id='$content['admin_id'] : 'user_id='$content['user_id'] ?>">
+                                    <button type="button">Edit</button>
+                                </a>
+                                <?php if(isset($content['images'])): ?>
+                                    <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
+                                    alt="<?= $content['image_name'] ?>"/>
+                                <?php else: ?>
+                                    <!-- Add the no image picture -->
+                                    <img src="./images/no_image.jpg" alt="No image available" />
+                                <?php endif ?>
+                                <audio controls>
+                                    <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/*">
+                                </audio>
+                                <p>Posted By: <?= getUser($_SESSION['client']) ?></p>
+                            </div>
+                        <?php endforeach ?>
+                    </div>
                 <?php endif ?>
             </div>
         </main>
