@@ -3,7 +3,7 @@
         
         @author: Nigel Abrera
         @date: 11/8/2023
-        @description: Home page
+        @description: Creating new post, validated with a session cookie.
 
     ****************/
     require("connect.php");
@@ -144,7 +144,7 @@
                     $query = "INSERT INTO genres(genre_name) VALUES (:genre_name)";
     
                     $statement = $db->prepare($query);
-                    $statement->bindValue(':genre_name', strtolower($genre_name));
+                    $statement->bindValue(':genre_name', strtolower($genre_name), PDO::PARAM_STR);
                     $statement->execute();
 
                     $genre_id = verify_genre($db, $genre_name); 
@@ -214,11 +214,11 @@
                                 $statement->bindValue(':title', $title, PDO::PARAM_STR);
         
                                 if($statement->execute()) {
-                                    header('Location: Tindex.php');
+                                    header('Location: index.php');
                                     exit();
                                 }                            
                             } else {
-                                $error[] = "Error: Invalid file type for audio";
+                                $error[] = "Error: Invalid file type for audio.";
 
                             }
                         } elseif(file_is_valid($image_temp_path, $image_upload_path) 
@@ -243,7 +243,7 @@
                             $statement->bindValue(':title', $title, PDO::PARAM_STR);
         
                             if($statement->execute()) {
-                                header('Location: Tindex.php');
+                                header('Location: index.php');
                                 exit();
                             }
 
@@ -291,11 +291,11 @@
                                 $statement->bindValue(':title', $title, PDO::PARAM_STR);
         
                                 if($statement->execute()) {
-                                    header('Location: Tindex.php');
+                                    header('Location: index.php');
                                     exit();
                                 }                            
                             } else {
-                                $error[] = "Error: Invalid file type for audio";
+                                $error[] = "Error: Invalid file type for audio.";
 
                             }
                         } elseif(file_is_valid($image_temp_path, $image_upload_path) 
@@ -319,7 +319,7 @@
                             $statement->bindValue(':title', $title, PDO::PARAM_STR);
         
                             if($statement->execute()) {
-                                header('Location: Tindex.php');
+                                header('Location: index.php');
                                 exit();
                             }
                         } else {
@@ -328,13 +328,15 @@
                         }
                     }
                 } else {
-                    $error[] = "Error: Music file exists! no duplication";
+                    $error[] = "Error: Music file exists! no duplication.";
 
                 }
             }
         }
-    } else { // Heads to Login
-        $error[] = "Login succed fix session";
+    } else { // Heads to Login 
+        header("Location: index.php");
+        exit();
+        // $error[] = "There's a problem with the connection.";
 
     }
 ?>
@@ -353,14 +355,23 @@
             <nav>
                 <ul>
                     <li>Engage</li> <!-- Logo -->
-                    <li><a href="Tindex.php">Home</a></li>
-                    <li>
-                        <a href="login.php">
-                            <button type="button">Sign In</button>
-                        </a>        
-                    </li>
-                    <?php // TODO logout ?>
-                    <li><a href="create_post.php">New Post</a></li>
+                    <li><a href="index.php">Home</a></li>
+                    <?php if(isset($_SESSION['client'])): ?>
+                        <li><!-- Style it to the middle-->
+                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a>
+                        </li>
+                        <li>
+                            <a href="logout.php">
+                                <button type="button">Sign out</button>
+                            </a>
+                        </li>
+                    <?php else: ?>
+                        <li>
+                            <a href="login.php">
+                                <button type="button">Sign In</button>
+                            </a> 
+                        </li>   
+                    <?php endif ?>
                 </ul>
             </nav>
         </header>
@@ -402,51 +413,3 @@
         </main>
     </body>
 </html>
-
-<?php 
-        // Revert Code Dump
-    // $query = "INSERT INTO contents(genre_id, user_id, images, song_file, title) 
-    // VALUES (:genre_id, :user_id, :images, :song_file, :title)";
-
-    // // Filtration and sanitization
-    // $client_id = filter_var($user_id, FILTER_SANITIZE_NUMBER_INT);
-    // $title = filter_var($_POST['song_name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-    // // Filtration of image and song file 
-    // $image_temp_path = $_FILES['image_cover']['tmp_name'];
-    // $song_temp_path = $_FILES['song_file']['tmp_name'];
-
-    // $image_name = $_FILES['image_cover']['name'];
-    // $song_name = $_FILES['song_file']['name'];
-
-    // $image_upload_path = file_upload_path($image_name);
-    // $song_upload_path = file_upload_path($song_name);
-
-    // if(file_is_valid($image_temp_path, $image_upload_path) 
-    // && file_is_valid($song_temp_path, $song_upload_path)){
-
-    //     move_uploaded_file($image_temp_path, $image_upload_path);
-    //     move_uploaded_file($song_temp_path, $song_upload_path);
-
-    //     $image_content = $_FILES['image_cover'];
-    //     $song_content = $_FILES['song_file'];
-
-    //     // Preparation, Binding, Execution
-    //     $statement = $db->prepare($query);
-        
-    //     $statement->bindValue(':genre_id', $genre_id, PDO::PARAM_INT);
-    //     $statement->bindValue(':user_id', $client_id, PDO::PARAM_INT);
-    //     $statement->bindValue(':images', file_get_contents($image_upload_path), PDO::PARAM_LOB);
-    //     $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);
-    //     $statement->bindValue(':title', $title, PDO::PARAM_STR);
-    //     if($statement->execute()) {
-    //         header('Location: Tindex.php');
-    //         exit();
-    //     }
-    // } else {
-    //     $error[] = "Error: Invalid file type or mime type for either image or song file.";
-
-    // }
-
-
-?>

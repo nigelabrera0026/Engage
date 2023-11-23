@@ -1,4 +1,6 @@
 <?php 
+    // This would be used for optimization
+
     /**
      * Slicing the email and checking if it's admin or not.
      * @param email retrieves the email to be sliced.
