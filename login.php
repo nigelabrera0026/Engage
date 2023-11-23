@@ -7,8 +7,7 @@
 
     ****************/
     /* 
-    TODO 
-    ADD LINK TO REGISTER (not in requirements but need it)
+    TODO check if user exists
 
     IN PROGRESS
  
@@ -72,7 +71,7 @@
     $error = [];
     $is_admin = false;
 
-    function retrieve_hashed_pwd($email) {
+    function retrieve_hashed_pwd($db, $email) {
         if(user_or_admin($email)) {
             $query = "SELECT * FROM admins WHERE email = :email";
         } else {
@@ -81,7 +80,8 @@
 
         $statement = $db->prepare($query);
         $statement->bindValue(':email', $email, PDO::PARAM_STR);
-        $result = $statement->execute();
+        $statement->execute();
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
         return $result['password'];
     }
 
@@ -97,16 +97,16 @@
             $user = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
             $pwd = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
+            // $hashedpwd = password_hash($pwd, PASSWORD_DEFAULT);
+
             if(user_or_admin($user)) { // User or Admin
-                $query = "SELECT admin_id, email, password FROM admins WHERE email = :user AND password = :password";
+                $query = "SELECT admin_id, email, password FROM admins WHERE email = :user ";
 
                 // Email Validation
                 // Preparation, Binding, Execution, and Retrieval
                 $statement = $db->prepare($query);
                 $statement->bindValue(':user', $user, PDO::PARAM_STR);
-                $statement->bindValue(':password', $pwd, PDO::PARAM_STR);
                 $statement->execute();
-
                 $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
                 // If results returned correct information then
@@ -115,55 +115,43 @@
                     $error[] = "Invalid Credentials! part 1";
                 
                 // De-hashing password
-                } elseif(!password_verify($result[0]['password'], retrieve_hashed_pwd($email[0]['email']))) {
-                    $error[] = "Invalid Password!";
-
-                } else {
+                } elseif(password_verify($pwd, $result[0]['password'])) {
 
                     $_SESSION['isadmin'] = 1;
 
                     $_SESSION['client_id'] = $result[0]['admin_id'];
                     $_SESSION['client'] = $result[0]['email'];
-                    
-                    // DEBUG DOC
-                    // if(isset($_COOKIE['visit_count'])) {
-                    //     $visit_count = $_COOKIE['visit_count'];
-                    //     $visit_count++;
-                    // } else {
-                    //     $visit_count = 1;
-                    // }
-                    // setcookie('visit_count', $visit_count, time() + 60 * 60);
 
-                    // TODO Change this thing.
-                    header("Location: Tindex.php");
+                    header("Location: index.php");
                     exit();
+
+                } else {
+                    $error[] = "Invalid password! 02";
 
                 }
             } else {
-                
-                $query = "SELECT email, password FROM users WHERE email = :user AND password = :password";
+                $query = "SELECT user_id, email, password FROM users WHERE email = :user ";
 
                 // Preparation, Binding, Execution, and Retrieval
                 $statement = $db->prepare($query);
                 $statement->bindValue(':user', $user, PDO::PARAM_STR);
-                $statement->bindValue(':password', $pwd, PDO::PARAM_STR);
                 $statement->execute();
-                $result = $statement->fetch();
+                $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
                 if(!$result) {
                     // TODO EDIT ERROR MESSAGE
                     $error[] = "Invalid Credentials! part 1";
                 
                 // De-hashing password
-                } elseif(!password_verify($result[0]['password'], retrieve_hashed_pwd($email[0]['email']))) {
-                    $error[] = "Invalid Password!";
+                } elseif(password_verify($pwd, $result[0]['password'])) {
+                    $_SESSION['client'] = $result[0]['email'];
+                    $_SESSION['client_id'] = $result[0]['user_id'];
+                    
+                    header("Location: index.php");
+                    exit();
 
                 } else { 
-                    $_SESSION['client'] = $user;
-                    $_SESSION['client_id'] = $result['user_id'];
-                    
-                    header("Location: Tindex.php");
-                    exit();
+                    $error[] = "Invalid password! 01";
                 }
             }
         }
@@ -177,6 +165,30 @@
         <title>Login Page</title>
     </head>
     <body>
+        <header>
+            <nav>
+                <ul>
+                    <li>Engage</li> <!-- Logo -->
+                    <li><a href="index.php">Home</a></li>
+                    <?php if(isset($_SESSION['client'])): ?>
+                        <li><!-- Style it to the middle-->
+                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a>
+                        </li>
+                        <li><!-- Style it to the far right -->
+                            <a href="logout.php">
+                                <button type="button">Sign out</button>
+                            </a>
+                        </li>
+                    <?php else: ?>
+                        <li> <!-- Style it to the far right -->
+                            <a href="login.php">
+                                <button type="button">Sign In</button>
+                            </a> 
+                        </li>   
+                    <?php endif ?>
+                </ul>
+            </nav>
+        </header>
         <?php if(!empty($error)): ?>
             <div>
                 <h1>Error(s):</h1>
@@ -198,7 +210,7 @@
             <form method="post" action="login.php">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" />
-                <label type="pwd">Password</label>
+                <label for="pwd">Password</label>
                 <input type="password" id="pwd" name="pwd" required/>
                 <button type="submit" id="login_submit">Sign In</button>
             </form>

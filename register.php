@@ -11,8 +11,13 @@
     require('library.php');
 
     $error = [];
-    // TODO FIXME
-    function verify_user_existence($db, $email) {
+    
+    /**
+     * Verifies if user exists.
+     * @param db PHP Data Object to use to SQL queries.
+     * @return bool False if user doesn't exists, True if it does.
+     */
+    function verify_user_existence($db, $email) { // TODO TBT
         if(user_or_admin($email)) { // true if admin
             $query = "SELECT * FROM admins WHERE email = :email";
 
@@ -22,19 +27,21 @@
         
         $statement = $db->prepare($query);
         $statement->bindValue(':email', $email, PDO::PARAM_STR);
+        $statement->execute();
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
 
-        if($statement->execute()){
-            return false;
-
-        } else {
-            return true;
-        }
+        return(!empty($result));
+        
     }
 
+    /**
+     * Hashing and salting using password_hash().
+     * @param password The password to be hashed and salted.
+     * @return password The hashed password.
+     */
     function hash_password($password) {
         return password_hash($password, PASSWORD_DEFAULT);
     }  
-
 
 
     if($_SERVER['REQUEST_METHOD'] == 'POST'){
@@ -50,7 +57,10 @@
             $error[] = "Password doesn not match!";
 
         } else {
-            if(!verify_user_existence($db, $email)) {
+            if(verify_user_existence($db, $email)) { // if it's true
+                $error[] = "User Exists.";
+                
+            } else {
                 // true if it's an admin
                 if(user_or_admin($email)){
                     $query = "INSERT INTO admins(email, password) VALUES (:email, :password)";
@@ -64,12 +74,11 @@
                 $statement->bindValue(":email", $email, PDO::PARAM_STR);
                 $statement->bindValue(':password', hash_password($password));
 
+
                 if($statement->execute()) {
-                    header("Location: Tindex.php");
+                    header("Location: login.php");
+                    exit();
                 }
-                
-            } else {
-                $error[] = "User Exists.";
             }
         }
     }
@@ -83,7 +92,7 @@
     </head>
     <body>
         <header>
-            <?php if(!empty($error)): ?>
+            <?php if(!empty($error)): ?> <!-- move error -->
                 <div>
                     <h1>Error(s):</h1>
                     <ul>
@@ -98,14 +107,16 @@
                     <li>Engage</li> <!-- Logo -->
                     <li><a href="index.php">Home</a></li>
                     <?php if(isset($_SESSION['client'])): ?>
-                        <li>
+                        <li><!-- Style it to the middle-->
+                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a>
+                        </li>
+                        <li><!-- Style it to the far right -->
                             <a href="logout.php">
-                                <button type="button">Log out</button>
+                                <button type="button">Sign out</button>
                             </a>
                         </li>
-                        <li><a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a></li>
                     <?php else: ?>
-                        <li>
+                        <li> <!-- Style it to the far right -->
                             <a href="login.php">
                                 <button type="button">Sign In</button>
                             </a> 
