@@ -354,9 +354,16 @@
             }
         }
     } else { // Heads to Login 
+<<<<<<< HEAD
         header("Location: login.php");
         exit();
         
+=======
+        header("Location: index.php");
+        exit();
+        // $error[] = "There's a problem with the connection.";
+
+>>>>>>> ec16bcfa51c660640ca99d644585480f2f04b0fc
     }
 ?>
 <!DOCTYPE html>
