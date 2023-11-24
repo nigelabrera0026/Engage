@@ -6,26 +6,6 @@
         @description: Login page with authentication
 
     ****************/
-<<<<<<< HEAD
-=======
-    /* 
-    TODO check if user exists
-
-    IN PROGRESS
- 
-    DONE    
-
-    LOGIN PAGE (General User, and Admin user)
-    Logic: Differentiate using email
-
-    TEST CASE:
-
-    DEV NOTES {
-        ADMIN CAN BE THE ONLY ONE WHO CAN CHANGE ANYONE'S COMMENT'S OR POST'S.
-        LOGGED USER
-    }
-    */
->>>>>>> ec16bcfa51c660640ca99d644585480f2f04b0fc
 
     require("connect.php");
     require("library.php");
@@ -35,15 +15,12 @@
     $error = [];
     $is_admin = false;
 
-<<<<<<< HEAD
     /**
      * Retrieving the hashed and salted password from the database.
      * @param db PHP Data Object to use to SQL queries.
      * @param email The email will be a pointer to the user's information.
      * @return result The password that is fetched in the database.
      */
-=======
->>>>>>> ec16bcfa51c660640ca99d644585480f2f04b0fc
     function retrieve_hashed_pwd($db, $email) {
         if(user_or_admin($email)) {
             $query = "SELECT * FROM admins WHERE email = :email";
@@ -98,11 +75,7 @@
                     exit();
 
                 } else {
-<<<<<<< HEAD
                     $error[] = "Invalid password!";
-=======
-                    $error[] = "Invalid password! 02";
->>>>>>> ec16bcfa51c660640ca99d644585480f2f04b0fc
 
                 }
             } else {
@@ -126,11 +99,7 @@
                     exit();
 
                 } else { 
-<<<<<<< HEAD
                     $error[] = "Invalid password!";
-=======
-                    $error[] = "Invalid password! 01";
->>>>>>> ec16bcfa51c660640ca99d644585480f2f04b0fc
                 }
             }
         }
