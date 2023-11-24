@@ -6,71 +6,21 @@
         @description: Login page with authentication
 
     ****************/
-    /* 
-    TODO check if user exists
-
-    IN PROGRESS
- 
-    DONE    
-
-    LOGIN PAGE (General User, and Admin user)
-    Logic: Differentiate using email
-
-    TEST CASE:
-
-    DEV NOTES {
-        ADMIN CAN BE THE ONLY ONE WHO CAN CHANGE ANYONE'S COMMENT'S OR POST'S.
-        LOGGED USER
-    }
-    */
 
     require("connect.php");
     require("library.php");
     session_start();
-/*
-    // RE-engineering.
-
-    class User {
-        private $email;
-        private $password;
-
-        public function __construct($email, $password) {
-            $this->email = $email;
-            $this->password = $password;
-        
-        }
-
-        public function getEmail() {
-            return $this->email;
-        
-        }
-
-        public function getPassword() {
-            return $this->password;
-
-        }
-    }
-
-    class
-*/
-
-
-
-    /*
-    TODO
-    Hash password for new registered users or admin.
-    function hashPassword($password) {
-        return password_hash($password, PASSWORD_DEFAULT);
-    }  
-
-    Verify the new logged in user to the password
-    password_verify($password, $user["password"])
-    */
 
     // Global vars
     $error = [];
     $is_admin = false;
 
+    /**
+     * Retrieving the hashed and salted password from the database.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param email The email will be a pointer to the user's information.
+     * @return result The password that is fetched in the database.
+     */
     function retrieve_hashed_pwd($db, $email) {
         if(user_or_admin($email)) {
             $query = "SELECT * FROM admins WHERE email = :email";
@@ -97,8 +47,6 @@
             $user = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
             $pwd = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-            // $hashedpwd = password_hash($pwd, PASSWORD_DEFAULT);
-
             if(user_or_admin($user)) { // User or Admin
                 $query = "SELECT admin_id, email, password FROM admins WHERE email = :user ";
 
@@ -111,8 +59,7 @@
 
                 // If results returned correct information then
                 if(!$result) {
-                    // TODO EDIT ERROR MESSAGE
-                    $error[] = "Invalid Credentials! part 1";
+                    $error[] = "Invalid Credentials!";
                 
                 // De-hashing password
                 } elseif(password_verify($pwd, $result[0]['password'])) {
@@ -126,7 +73,7 @@
                     exit();
 
                 } else {
-                    $error[] = "Invalid password! 02";
+                    $error[] = "Invalid password!";
 
                 }
             } else {
@@ -139,8 +86,7 @@
                 $result = $statement->fetchAll(PDO::FETCH_ASSOC);
 
                 if(!$result) {
-                    // TODO EDIT ERROR MESSAGE
-                    $error[] = "Invalid Credentials! part 1";
+                    $error[] = "Invalid Credentials!";
                 
                 // De-hashing password
                 } elseif(password_verify($pwd, $result[0]['password'])) {
@@ -151,7 +97,7 @@
                     exit();
 
                 } else { 
-                    $error[] = "Invalid password! 01";
+                    $error[] = "Invalid password!";
                 }
             }
         }

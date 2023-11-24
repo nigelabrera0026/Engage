@@ -7,12 +7,11 @@
 
     ****************/
     require("connect.php");
-    session_start();
+    require ('ImageResize.php');
+    require ('ImageResizeException.php');
 
-    /**
-     * TODO If title exists then do not insert. TBT
-     * 
-     */
+    use Gumlet\ImageResize;
+    session_start();
 
     // Global Var
     $error = [];
@@ -172,7 +171,7 @@
                 $title = filter_var($_POST['song_name'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
                 // Verifies existence of title.
-                if(empty(verify_title($db, $title))) {
+                if(is_null(verify_title($db, $title))) {
                     // If the user is an admin
                     if(isset($_SESSION['isadmin'])){ 
                         // Image is set
@@ -317,7 +316,28 @@
                             $statement->bindValue(':image_name', $image_name, PDO::PARAM_STR);
                             $statement->bindValue(':song_file', file_get_contents($song_upload_path), PDO::PARAM_LOB);                        
                             $statement->bindValue(':title', $title, PDO::PARAM_STR);
-        
+
+                            // Moving Resized images
+                            $new_upload_path = file_upload_path($image_name);
+
+                            if(in_array(pathinfo($new_upload_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png'])) {
+                                $resized_medium_image = file_upload_path($image_name, 'uploads_medium');
+                                $resized_thumbnail_image = file_upload_path($image_name, 'uploades_thumbnail');
+
+                                try {
+                                    $image = new ImageResize($image_upload_path);
+                                    $image->resizeToWidth(400);
+                                    $image->save($resized_medium_image);
+
+                                    $image = new ImageResize($image_upload_path);
+                                    $image->resizeToWidth(50);
+                                    $image->save($resized_thumbnail_image);
+
+                                } catch (ImageResize $e) {
+                                    $error[] = "Error: Something is wrong with Image Resize."
+                                }
+                            }
+
                             if($statement->execute()) {
                                 header('Location: index.php');
                                 exit();
@@ -334,20 +354,18 @@
             }
         }
     } else { // Heads to Login 
-        header("Location: index.php");
+        header("Location: login.php");
         exit();
-        // $error[] = "There's a problem with the connection.";
-
+        
     }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="./scripts/create_post_scripts.js"></script>
-        <title>New Content</title>
+        <title>New Post</title>
     </head>
     <body>
         <!-- Template for Data to be created -->
@@ -401,6 +419,7 @@
                         <div>
                             <label for="audio">Song</label>
                             <input type="file" name="song_file" id="song_file" accept="audio/*" />
+                            <button type="button" id="remove_song_file" style="display: block;">Remove Song</button>
                             <label for="song_name">Title</label>
                             <input type="text" name="song_name" id="song_name" />
                             <label for="song_genre">Genre</label>

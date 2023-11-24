@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", load);
 function load() {
 
     /**
-     * Function to display image preview
+     * Function to display image preview.
      * @param input File path 
      * */ 
     function readURL(input) {
@@ -28,7 +28,7 @@ function load() {
         }
     }
     
-    // Trigger the function when a file is selected
+    // Trigger the function when a file is selected.
     let imageCoverInput = document.getElementById("image_cover");
     if (imageCoverInput) {
         imageCoverInput.addEventListener("change", function () {
@@ -37,13 +37,21 @@ function load() {
         
     }
 
-    // Function to remove the image
+    // Anonymouys function to remove the image.
     let removeImageButton = document.getElementById("remove_image");
     if(removeImageButton) {
         removeImageButton.addEventListener("click", () => {
             document.getElementById("image_preview").src = '#';
             document.getElementById('image_preview').style.display = 'none';
             document.getElementById('image_cover').value = '';
+        });
+    }
+
+    // Anonymous function to remove audio file.
+    let removeSongButton = document.getElementById("remove_song_file");
+    if(removeSongButton) {
+        removeSongButton.addEventListener("click", () => {
+            document.getElementById("song_file").value = '';
         });
     }
 }

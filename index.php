@@ -10,8 +10,8 @@
     session_start();
 
     /*
-        TODO FIXME title and date sortation.
-        sort Genre DONE
+        TODO FIXME search algorithm and, title, date sortation.
+        Sort Genre DONE
 
         Dev notes: session_start(); carries over all the session.
 
@@ -53,9 +53,11 @@
     $error = [];
 
     /**
-     * 
-     * @param client
-     * @return bool
+     * Executes a query to retrieve the user's part of the email from the database of existing user.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param admin_id The id of the admin if it's not null.
+     * @param user_id The user's id if it's not null.
+     * @return domain The user name before the domain.
      */
     function getUser($db, $admin_id, $user_id) {
         // Init
@@ -90,21 +92,11 @@
     }
 
     /**
-     * 
-     * @return id
-     * @return bool
+     * Retriving existing genre specified what's in the list of the genre.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param genre_name The name of the genre to be searched.
+     * @return results Array of the fetched data from the database.
      */
-    function identify_client($id) {
-        if(isset($id['admin_id'])) {
-            return true;
-        
-        } else {
-            return false;
-
-        }
-    }
-
-
     function retrieve_genres($db, $genre_name) {
         if(is_null($genre_name)) {
             $query = "SELECT genre_name, genre_id FROM genres";
@@ -314,10 +306,7 @@
                     <label for="orientation">Order:</label>
                     <input type=
                     <button type="submit"></button>
-                </form> -->
-
-
-
+                </form> --> <?php //TODO FIXME ?>
                 <form action="index.php" method="post"> 
                     <div>
                         <label for="search">Search</label>
@@ -374,16 +363,13 @@
                             <button type="button">View Full Post</button>
                         </a>
                         <?php if(isset($_SESSION['isadmin']) || (isset($_SESSION['client_id']) && ($_SESSION['client_id'] == $content['user_id']))):?>
-                            <a href="edit.php?user_id=<?=$content['user_id']?>">
+                            <a href="edit.php?content_id=<?=$content['content_id']?>">
                                 <button type="button">Edit</button>
                             </a>
                         <?php endif ?>
                         <?php if(isset($content['images'])): ?>
                             <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
                             alt="<?= $content['image_name'] ?>"/>
-                        <?php else: ?>
-                            <!-- Add the no image picture -->
-                            <img src="./images/no_image.jpg" alt="No image available" />
                         <?php endif ?>
                         <a href="view_content.php">
                             <h2><?= $content['title'] ?></h2>
