@@ -160,7 +160,7 @@
                 <input type="email" id="email" name="email" />
                 <label for="pwd">Password</label>
                 <input type="password" id="pwd" name="pwd" required/>
-                <button type="submit" id="login_submit">Sign In</button>
+                <button type="submit" id="login_submit">Enter</button>
             </form>
         </div>
     </body>

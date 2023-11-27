@@ -9,7 +9,10 @@
     require("connect.php");
     session_start();
 
+
+
     /*
+        TODO USE BOOTSTRAP FOR CSS
         TODO FIXME search algorithm and, title, date sortation.
         Sort Genre DONE
 
@@ -192,6 +195,7 @@
     } 
 
     if($_SERVER['REQUEST_METHOD'] == 'GET') {
+        
         if(isset($_GET['sort_genre']) && ($_GET['sort_genre'] !== 'none')){
             $genre = filter_var($_GET['sort_genre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
@@ -240,13 +244,9 @@
 ?>
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
-    </head>
+    <?php include 'header.php'; ?>
     <body>
-        <header>
+        <header id="main-header">
             <nav>
                 <ul>
                     <li>Engage</li> <!-- Logo -->
@@ -306,13 +306,13 @@
                     <label for="orientation">Order:</label>
                     <input type=
                     <button type="submit"></button>
-                </form> --> <?php //TODO FIXME ?>
+                </form> FIXME --> 
                 <form action="index.php" method="post"> 
                     <div>
-                        <label for="search">Search</label>
-                        <input type="text" name="search" id="search" />
+                        <label for="search">Search CHECK</label><!-- Check if you could dodge it -->
+                        <input type="text" name="search" id="Search" />
                     </div>
-                    <input type="submit" name="submit" value="search_button"/>
+                    <input type="submit" name="submit" value="Search"/>
                     <!-- Prototype form will be used for sortation-->
                     <label for="sort_title">Title</label>
                     <select name="sort_title" id="sort_title" onchange="document.getElementById('sort_title').form.submit();">
@@ -370,10 +370,8 @@
                         <?php if(isset($content['images'])): ?>
                             <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
                             alt="<?= $content['image_name'] ?>"/>
-<<<<<<< HEAD
-=======
-                        <?php else: ?>
-                            <!-- Add the no image picture -->
+                        <?php endif ?>
+                        <h3><?= $content['title'] ?></h3>
                         <audio controls>
                             <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>
                         </audio>

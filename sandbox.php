@@ -34,8 +34,14 @@
     //     }
     // }
 
+    $query = "SELECT title FROM contents WHERE title = :title";
+    $title = filter_var($title, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $statement = $db->prepare($query);
+    $statement->bindValue(':title', "magnets", PDO::PARAM_STR);
+    $statement->execute();
+    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+    print_r($results);
 
-    
   
 ?>
 <!DOCTYPE html>
@@ -79,8 +85,6 @@
         </div>
         <div> 
             <?= $_POST['search']  ?>
-            <?= $_POST['sort_title']  ?>
-            <?= $_POST['sort_date']  ?>
         </div>
     </body>
 </html>

@@ -7,6 +7,7 @@
 
     ****************/
     require("connect.php");
+    require("library.php");
     require ('ImageResize.php');
     require ('ImageResizeException.php');
 
@@ -15,115 +16,6 @@
 
     // Global Var
     $error = [];
-
-    /**
-     * Retrieves id of the user.
-     * @param db PHP Data Object to use to SQL queries.
-     * @return result Fetched user or admin id from the database.
-     */
-    function retrieve_userID($db) { 
-        $user_type;
-
-        if(isset($_SESSION['isadmin'])) {
-            $query = "SELECT admin_id FROM admins WHERE email = :email";
-            $user_type = "admin";
-
-        } else {
-            $query = "SELECT user_id FROM users WHERE email = :email";
-            $user_type = "user";
-        }
-
-        // Sanitization, Preparation, Binding, Execution, and Retrieval
-        $email_sanitized = filter_var($_SESSION['client'], FILTER_SANITIZE_EMAIL);
-        $statement = $db->prepare($query);
-        $statement->bindValue(':email', $email_sanitized, PDO::PARAM_STR);
-        $statement->execute();
-        $result = $statement->fetch();
-
-        return $result[$user_type . '_id'];
-    }
-
-    /**
-     * Verification if genre exists in the database.
-     * @param db PHP Data Object to use to SQL queries.
-     * @param genre_name The genre specified by the fetched user input.
-     * @return result Fetched id from the database refering what id of a specific genre is.
-     */
-    function verify_genre($db, $genre_name) {
-        $query = "SELECT genre_id FROM genres WHERE genre_name = :genre_name";
-
-        $statement = $db->prepare($query);
-        $statement->bindValue(':genre_name', $genre_name, PDO::PARAM_STR);
-        $statement->execute();
-        $result = $statement->fetch();
-        return $result['genre_id']; 
-    }
-
-    /**
-     * Retrieves Title, to be used to verify its existence from users stuffs.
-     * @param db PHP Data Object to use to SQL queries.
-     * @param title The title's name to be verified, retrieved from user input.
-     * @return result[title] The hash value of the title. Returns null if it doesn't exists.
-     */
-    function verify_title($db, $title) {
-        if(isset($_SESSION['is_admin'])) {
-            $query = "SELECT title FROM contents WHERE title = :title AND :admin_id = admin_id";
-            $statement = $db->prepare($query);
-            $statement->bindValue(':admin_id', $_SESSION['client_id'], PDO::PARAM_INT);
-
-        } else {
-            $query =  "SELECT title FROM contents WHERE title = :title AND :user_id = user_id";
-            $statement = $db->prepare($query);
-            $statement->bindValue(':user_id', $_SESSION['client_id'], PDO::PARAM_INT);
-
-        }
-        
-        $statement->bindValue(':title', $title, PDO::PARAM_STR);
-        $statement->execute();
-        $result = $statement->fetch();
-        return $result['title'];
-    }
-    
-    /**
-     * Initialize file path
-     * @param original_filename The original name of the uploaded content.
-     * @param upload_subfolder_name The initialized upload subfolder name.
-     * @return path_segments The proper format for the path.
-     */
-    function file_upload_path($original_filename, $upload_subfolder_name = 'uploads') {
-        $current_folder = dirname(__FILE__);
-        $upload_folder = join(DIRECTORY_SEPARATOR, [$current_folder, $upload_subfolder_name]);
-
-        if(!file_exists($upload_folder)) {
-            // Directory, octal representation of file type and permission
-            mkdir($upload_folder, 0777, true);
-        }
-
-        $path_segments = [$current_folder, $upload_subfolder_name, basename($original_filename)];
-        return join(DIRECTORY_SEPARATOR, $path_segments);
-    }
-
-    /**
-     * Validates file type and mime type.
-     * @param temporary_path Location of the image stored temporarily.
-     * @param new_path Location of the new path for the image.
-     * @return file_extension_is_valid Returns Boolean.
-     * @return mime_type_is_valid Returns Boolean.
-     */
-    function file_is_valid($temporary_path, $new_path) {
-        $allowed_mime_types = ['image/jpg','image/jpeg', 'image/png', 'audio/mpeg'];
-        $allowed_file_extension = ['jpg', 'jpeg', 'png', 'mp3'];
-
-        $actual_file_extension = pathinfo($new_path, PATHINFO_EXTENSION);
-
-        $actual_mime_type = mime_content_type($temporary_path);
-
-        $file_extension_is_valid = in_array($actual_file_extension, $allowed_file_extension);
-        $mime_type_is_valid = in_array($actual_mime_type, $allowed_mime_types);
-
-        return $file_extension_is_valid && $mime_type_is_valid;
-    }
-
 
     if(isset($_SESSION['client'])) {
 
@@ -199,6 +91,7 @@
                         
 
                         if(!$image_upload_detected) {
+
                             if(file_is_valid($song_temp_path, $song_upload_path)) {
                                 move_uploaded_file($song_temp_path, $song_upload_path);
 
@@ -278,7 +171,8 @@
                         if(!$image_upload_detected) {
                             if(file_is_valid($song_temp_path, $song_upload_path)) {
                                 move_uploaded_file($song_temp_path, $song_upload_path);
-
+                                
+                                // TODO Check if redundant.
                                 $song_content = $_FILES['song_file'];
 
                                 // Preparation, Binding, Execution
@@ -334,7 +228,7 @@
                                     $image->save($resized_thumbnail_image);
 
                                 } catch (ImageResize $e) {
-                                    $error[] = "Error: Something is wrong with Image Resize."
+                                    $error[] = "Error: Something is wrong with Image Resize.";
                                 }
                             }
 
@@ -408,7 +302,7 @@
             <div> <!-- wrapper -->
                 <form action="create_post.php" method="post" enctype="multipart/form-data">
                     <fieldset>
-                        <legend>Upload Song</legend>
+                        <legend>Upload Content</legend>
                         <div>
                             <label for="image_cover">Image Preview</label>
                             <img id="image_preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; display: none;">
@@ -426,7 +320,7 @@
                             <input type="text" name="song_genre" id="song_genre" />
                         </div>
                     </fieldset>
-                    <input type="submit" name="submit" value="upload_content" />
+                    <input type="submit" name="submit" value="Upload" />
                 </form>
             </div>
         </main>
