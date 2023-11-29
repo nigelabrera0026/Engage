@@ -24,10 +24,6 @@
         - Then make the post work.
         - Ensure admin or client priv logic.
 
-        CONTROL FLOW Pseudocode: what if it is admin priv.
-        if isset isadmin 
-        then if isset client session cookie
-        else isset client session cookie
     
         CONTROL FLOW FOR UPDATE:
 
@@ -52,8 +48,6 @@
 
     // Global Var
     $error = [];
-
-
 
     /**
      * 
@@ -181,7 +175,7 @@
                     // If title exists in the db like ie changing a title to an existing one, invalid. 
                     // Tenta solution, create a function that will test if it exists or if it's the same as 
                     // Title upload
-                    if(!verify_content_title($db, $content_id, $title)) {
+                    if(verify_title($db, $title)) {
                         $contents[] = "title = :title";
                         $values[':title'] = $title;
                     
@@ -370,8 +364,22 @@
                                 <button type="button" id="remove_song_file" style="display: block;">Remove Song</button>
                                 <label for="song_name">Title</label>
                                 <input type="text" name="song_name" id="song_name" value="<?= $results['title']?>"/>
-                                <label for="song_genre">Genre</label>
-                                <input type="text" name="song_genre" id="song_genre" value="<?= retrieve_genre_name($db, $content_id); ?>"/>
+                                <select name="song_genre" id="song_genre">
+                                    <?php $genres = retrieve_genres($db, null) ?>
+                                    <option value="<?= retrieve_genre_name($db, $content_id); ?>" selected>
+                                        <?= retrieve_genre_name($db, $content_id); ?>
+                                    </option>
+                                    <?php foreach($genres as $genre_list): ?>
+                                        <?php if(is_null($genre_list['genre_name'])): ?>
+                                        <?php else: ?>
+                                            <option value="<?= $genre_list['genre_name'] ?>" >
+                                                <?= ucfirst($genre_list['genre_name']) ?>
+                                            </option>
+                                        <?php endif ?>
+                                    <?php endforeach ?>
+                                </select>
+                                <!-- <label for="song_genre">Genre</label>
+                                <input type="text" name="song_genre" id="song_genre" value="<?= retrieve_genre_name($db, $content_id); ?>"/> -->
                             </div>
                         </fieldset>
                         <input type="submit" name="submit" value="Update" />

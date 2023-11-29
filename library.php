@@ -7,6 +7,12 @@
 
     ****************/
 
+    function username_cookie($email) {
+        $domain = explode('@', $email);
+
+        return $domain[0];
+    }
+
     /**
      * Slicing the email and checking if it's admin or not.
      * @param email retrieves the email to be sliced.
@@ -30,6 +36,70 @@
         }
     }
     
+    
+    /**
+     * Executes a query to retrieve the user's part of the email from the database of existing user.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param admin_id The id of the admin if it's not null.
+     * @param user_id The user's id if it's not null.
+     * @return domain The user name before the domain.
+     */
+    function getUser($db, $admin_id, $user_id) {
+        // Init
+        $query;
+        $statement;
+
+        if(!is_null($admin_id)){
+            $query = "SELECT email FROM admins WHERE admin_id = :admin_id";
+            $statement = $db->prepare($query);
+            $statement->bindValue(":admin_id", $admin_id, PDO::PARAM_INT);
+
+        } elseif(!is_null($user_id)) {
+            $query = "SELECT email FROM users WHERE user_id = :user_id";
+            $statement = $db->prepare($query);
+            $statement->bindValue(":user_id", $user_id, PDO::PARAM_INT);
+
+        } else {
+            global $error;
+            $error[] = "something is wrong.";
+        }
+
+        $statement->execute();
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+        
+        if(!empty($result)) {
+            $domain = explode('@', $result['email']);
+            return $domain[0];
+
+        } else {
+            return "Error: DB Error.";
+        }
+    }
+
+    /**
+     * Retriving existing genre specified what's in the list of the genre.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param genre_name The name of the genre to be searched.
+     * @return results Array of the fetched data from the database.
+     */
+    function retrieve_genres($db, $genre_name) {
+        if(is_null($genre_name)) {
+            $query = "SELECT genre_name, genre_id FROM genres";
+
+            $statement = $db->prepare($query);
+        } else {
+            $query = "SELECT genre_name, genre_id FROM genres WHERE genre_name = :genre_name";
+
+            $statement = $db->prepare($query);
+            $statement->bindValue(':genre_name', $genre_name, PDO::PARAM_STR);
+        }
+
+        $statement->execute();
+        $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        return $results;
+    }
+    
     /**
      * Verification if genre exists in the database.
      * @param db PHP Data Object to use to SQL queries.
@@ -43,7 +113,9 @@
         $statement->bindValue(':genre_name', $genre_name, PDO::PARAM_STR);
         $statement->execute();
         $result = $statement->fetch();
-        return $result['genre_id']; 
+        if(!empty($result)) { 
+            return $result['genre_id']; 
+        }
     }
 
     /**
@@ -82,7 +154,7 @@
      */
     function verify_title($db, $title) {
         if(isset($_SESSION['is_admin'])) {
-            $query = "SELECT title FROM contents WHERE title = :title AND :admin_id = admin_id";
+            $query = "SELECT title FROM contents WHERE title = :title";
             $statement = $db->prepare($query);
             $statement->bindValue(':admin_id', $_SESSION['client_id'], PDO::PARAM_INT);
 
@@ -95,8 +167,17 @@
         
         $statement->bindValue(':title', $title, PDO::PARAM_STR);
         $statement->execute();
-        $result = $statement->fetch();
-        return $result['title'];
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+        
+        if(!is_null($result)){
+            return true;
+
+        } else {
+            return false;
+        }
+
+        // $result = $statement->fetch();
+        
     }
     
     /**

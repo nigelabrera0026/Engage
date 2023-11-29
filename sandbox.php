@@ -34,14 +34,33 @@
     //     }
     // }
 
-    $query = "SELECT title FROM contents WHERE title = :title";
-    $title = filter_var($title, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $statement = $db->prepare($query);
-    $statement->bindValue(':title', "magnets", PDO::PARAM_STR);
-    $statement->execute();
-    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
-    print_r($results);
+    // $query = "SELECT title FROM contents WHERE title = :title";
+    // $title = filter_var($title, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    // $statement = $db->prepare($query);
+    // $statement->bindValue(':title', "magnets", PDO::PARAM_STR);
+    // $statement->execute();
+    // $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+    // print_r($results);
 
+
+    // $contents = [];
+    // $contents[] = "song_file";
+    // $contents[] = "title";
+    // $contents[] = "genre";
+
+    // $values = [];
+    // $values[":song_file"] = "Test song file";
+    // $values[':title'] = "Test title";
+    // $values[':genre'] = "Test Genre";
+    
+    // $contents = implode(", ", $contents);
+    // $placeholders = implode(", ", array_map(function ($param) {
+    //     return ":" . $param;
+    // }, array_keys($values)));
+
+    // foreach($values as $param => $values) {
+    //     echo $param . " " . $values;
+    // }
   
 ?>
 <!DOCTYPE html>
@@ -50,42 +69,31 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login Page</title>
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <form action="sandbox.php" method="post" id="search_and_sort"> 
-            <div>
-                <label for="search">Search</label>
-                <input type="text" name="search" id="search" />
-            </div>
-            
-            <!-- Prototype form will be used for sortation-->
-            <label for="sort_title">Title</label>
-            <select name="sort_title" id="sort_title" onchange="this.form.submit()">
-                <option value=""></option>
-                <option value="ASC">ASC</option>
-                <option value="DESC">DESC</option>
-            </select>
-            <label for="sort_date">Date</label>
-            <select name="sort_date" id="sort_date" onchange="this.form.submit()">
-                <option value=""></option>
-                <option value="ASC">ASC</option>
-                <option value="DESC">DESC</option>
-            </select>
-            <input type="submit" name="submit" value="search_button"/>
+        <form action="create_post.php" method="post" enctype="multipart/form-data">
+            <fieldset>
+                <legend>Upload Content</legend>
+                <div>
+                    <img id="image_preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; display: none;">
+                    <label for="image_cover">Image</label> <!-- prompt image -->
+                    <input type="file" name="image_cover" id="image_cover" accept="image/*"/>
+                    <button type="button" id="remove_image" class="hidden">Remove Image</button>
+                </div>
+                <div>
+                    <label for="song_file">Song</label>
+                    <input type="file" name="song_file" id="song_file" accept="audio/*" />
+                    <!-- FIXME Button should be hidden when songfile is not set, FIX IN JS -->
+                    <button type="button" id="remove_song_file" class="hidden">Remove Song</button>
+                    <label for="song_name">Title</label>
+                    <input type="text" name="song_name" id="song_name" />
+                    <label for="song_genre">Genre</label>
+                    <input type="text" name="song_genre" id="song_genre" />
+                </div>
+            </fieldset>
+            <input type="submit" name="submit" value="Upload" />
         </form>
-        <div>
-            <?php if(!empty($error)): ?>
-                <h1>Error(s):</h1>
-                <ul>
-                    <?php foreach($error as $message): ?>
-                        <li><?= $message ?></li>
-                    <?php endforeach ?>
-                </ul>
-            <?php endif ?>
-        </div>
-        <div> 
-            <?= $_POST['search']  ?>
-        </div>
     </body>
 </html>
 

@@ -35,8 +35,7 @@
         return $result['password'];
     }
 
-
-
+    
     if($_SERVER['REQUEST_METHOD'] == "POST") {
         // Validation
         if(empty($_POST['email']) || empty($_POST['pwd'])) {

@@ -7,11 +7,14 @@
 
     ****************/
     require("connect.php");
+    require("library.php");
     session_start();
 
 
 
     /*
+        TODO ADMIN CRUD PRIV FOR USERS
+        LOGIC { }
         TODO USE BOOTSTRAP FOR CSS
         TODO FIXME search algorithm and, title, date sortation.
         Sort Genre DONE
@@ -55,69 +58,6 @@
     // Global
     $error = [];
 
-    /**
-     * Executes a query to retrieve the user's part of the email from the database of existing user.
-     * @param db PHP Data Object to use to SQL queries.
-     * @param admin_id The id of the admin if it's not null.
-     * @param user_id The user's id if it's not null.
-     * @return domain The user name before the domain.
-     */
-    function getUser($db, $admin_id, $user_id) {
-        // Init
-        $query;
-        $statement;
-
-        if(!is_null($admin_id)){
-            $query = "SELECT email FROM admins WHERE admin_id = :admin_id";
-            $statement = $db->prepare($query);
-            $statement->bindValue(":admin_id", $admin_id, PDO::PARAM_INT);
-
-        } elseif(!is_null($user_id)) {
-            $query = "SELECT email FROM users WHERE user_id = :user_id";
-            $statement = $db->prepare($query);
-            $statement->bindValue(":user_id", $user_id, PDO::PARAM_INT);
-
-        } else {
-            global $error;
-            $error[] = "something is wrong.";
-        }
-
-        $statement->execute();
-        $result = $statement->fetch(PDO::FETCH_ASSOC);
-        
-        if($result) {
-            $domain = explode('@', $result['email']);
-            return $domain[0];
-
-        } else {
-            return "Error: DB Error.";
-        }
-    }
-
-    /**
-     * Retriving existing genre specified what's in the list of the genre.
-     * @param db PHP Data Object to use to SQL queries.
-     * @param genre_name The name of the genre to be searched.
-     * @return results Array of the fetched data from the database.
-     */
-    function retrieve_genres($db, $genre_name) {
-        if(is_null($genre_name)) {
-            $query = "SELECT genre_name, genre_id FROM genres";
-
-            $statement = $db->prepare($query);
-        } else {
-            $query = "SELECT genre_name, genre_id FROM genres WHERE genre_name = :genre_name";
-
-            $statement = $db->prepare($query);
-            $statement->bindValue(':genre_name', $genre_name, PDO::PARAM_STR);
-        }
-
-        $statement->execute();
-        $results = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-        return $results;
-
-    }
 
     // When the page loads.
     $query = "SELECT * FROM contents LIMIT 30"; 
@@ -131,22 +71,22 @@
     // If search is clicked. 
     if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-        if($_POST && !empty($_POST['search'])){
+        if($_POST && !empty($_POST['Search'])){
             // Filtration and Sanitization.
-            $user_query = '%' . filter_var(INPUT_POST, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS) . '%';
-            $sort_title = filter_var(INPUT_POST, 'sort_title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $sort_date = filter_var(INPUT_POST, 'sort_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $user_query = filter_input(INPUT_POST, 'Search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $sort_title = filter_input(INPUT_POST, 'sort_title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $sort_date = filter_input(INPUT_POST, 'sort_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
             // Init
             $query;
             $statement;
 
             if(!empty($sort_title) && !empty($sort_date)) {
-                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY :title $sort_title, date_posted $sort_date LIMIT 30";
+                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY title $sort_title, date_posted $sort_date LIMIT 30";
                 $statement = $db->prepare($query);
 
             } elseif(!empty($_POST['sort_title']) && isset($_POST['sort_title'])) {
-                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY :title $sort_title LIMIT 30";
+                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY title $sort_title LIMIT 30";
                 $statement = $db->prepare($query);
                 
             } elseif (!empty($_POST['sort_date']) && isset($_POST['sort_title'])) {
@@ -154,25 +94,28 @@
                 $statement = $db->prepare($query);
 
             } else {
-                $query = "SELECT * FROM contents WHERE title = :title";
+                // echo "It passed here";
+                $query = "SELECT * FROM contents WHERE title LIKE :title";
                 $statement = $db->prepare($query);
 
             }
+            $user_query = '%' . $user_query . '%';
+            echo $query;
             $statement->bindValue(':title', $user_query, PDO::PARAM_STR);
             $statement->execute();
             $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
         } else {
             // Do the common query which is this $query = "SELECT * FROM contents LIMIT 30"; 
-            $sort_title = filter_var(INPUT_POST, 'sort_title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $sort_date = filter_var(INPUT_POST, 'sort_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $sort_title = filter_input(INPUT_POST, 'sort_title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $sort_date = filter_input(INPUT_POST, 'sort_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
             // Init
             $query;
             $statement;
 
             if(!empty($sort_title) && !empty($sort_date)) {
-                $query = "SELECT * FROM contents WHERE ORDER BY title $sort_title, date_posted $sort_date LIMIT 30";
+                $query = "SELECT * FROM contents ORDER BY title $sort_title, date_posted $sort_date LIMIT 30";
                 $statement = $db->prepare($query);
 
             } elseif(!empty($_POST['sort_title']) && isset($_POST['sort_title'])) {
@@ -194,12 +137,14 @@
         }
     } 
 
+    // If Genre is change
     if($_SERVER['REQUEST_METHOD'] == 'GET') {
         
         if(isset($_GET['sort_genre']) && ($_GET['sort_genre'] !== 'none')){
             $genre = filter_var($_GET['sort_genre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
             $query = "SELECT * FROM contents WHERE genre_id = :genre_id";
+            setcookie('genre_holder', $genre, time() + 60 * 60 * 24 * 2);
 
             $genre_id = retrieve_genres($db, $genre);
 
@@ -207,6 +152,9 @@
             $statement->bindValue(':genre_id', $genre_id[0]['genre_id'], PDO::PARAM_INT);
             $statement->execute();
             $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+            // Set the session variable
+            $_SESSION['genre_holder'] = $genre;
 
         }
     }
@@ -253,7 +201,9 @@
                     <li><a href="index.php">Home</a></li>
                     <?php if(isset($_SESSION['client'])): ?>
                         <li><!-- Style it to the middle-->
-                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a>
+                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
+                                <?= username_cookie($_SESSION['client'])  ?>
+                            </a>
                         </li>
                         <li>
                             <a href="logout.php">
@@ -314,7 +264,7 @@
                     </div>
                     <input type="submit" name="submit" value="Search"/>
                     <!-- Prototype form will be used for sortation-->
-                    <label for="sort_title">Title</label>
+                    <!-- <label for="sort_title">Title</label> 
                     <select name="sort_title" id="sort_title" onchange="document.getElementById('sort_title').form.submit();">
                         <option value="" selected></option>
                         <option value="ASC">ASC</option>
@@ -325,7 +275,7 @@
                         <option value="" selected></option>
                         <option value="ASC">ASC</option>
                         <option value="DESC">DESC</option>
-                    </select>
+                    </select> -->
                 </form>
             </div>
             <div>
@@ -334,7 +284,7 @@
             <div>
                 <!-- Form Get for sort_title. -->
             </div>
-            <div> <!-- Linkl for creating new post -->
+            <div> <!-- Link for creating new post -->
                 <?php if(isset($_SESSION['client_id']) || isset($_SESSION['isadmin'])): ?>
                     <a href="create_post.php">
                         <button type="button">New Post +</button>
@@ -348,9 +298,16 @@
                             <option value="none">None</option>
                             <?php $genres = retrieve_genres($db, null) ?>
                             <?php foreach($genres as $genre_list): ?>
-                                <option value=<?= $genre_list['genre_name'] ?>>
-                                    <?= ucfirst($genre_list['genre_name']) ?>
-                                </option>
+                                <?php if(is_null($genre_list['genre_name'])): ?>
+                                    <h1>No Content Found!</h1>
+                                <?php else: ?>
+                                    <option value="<?= $genre_list['genre_name'] ?>"
+                                        <?php if(isset($_SESSION['genre_holder']) && $_SESSION['genre_holder'] == $genre_list['genre_name']): ?>
+                                            selected="selected"
+                                        <?php endif ?>> 
+                                        <?= ucfirst($genre_list['genre_name']) ?>
+                                    </option>
+                                <?php endif ?>
                             <?php endforeach ?>
                         </select>
                     </label>
@@ -372,9 +329,11 @@
                             alt="<?= $content['image_name'] ?>"/>
                         <?php endif ?>
                         <h3><?= $content['title'] ?></h3>
-                        <audio controls>
-                            <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>
-                        </audio>
+                        <?php if(isset($content['song_file'])): ?>
+                            <audio controls>
+                                <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>
+                            </audio>
+                        <?php endif ?>
                         <!-- Posted By-->
                         <p>
                             @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
