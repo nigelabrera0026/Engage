@@ -24,8 +24,10 @@
     function retrieve_hashed_pwd($db, $email) {
         if(user_or_admin($email)) {
             $query = "SELECT * FROM admins WHERE email = :email";
+
         } else {
             $query = "SELECT * FROM users WHERE email = :email";
+            
         }
 
         $statement = $db->prepare($query);

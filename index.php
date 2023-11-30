@@ -316,7 +316,7 @@
             <div><!-- Container in place holding the content -->
                 <?php foreach($results as $content): ?>
                     <div>
-                        <a href="view_content.php">
+                        <a href="view_content.php?content_id=<?= $content['content_id'] ?>">
                             <button type="button">View Full Post</button>
                         </a>
                         <?php if(isset($_SESSION['isadmin']) || (isset($_SESSION['client_id']) && ($_SESSION['client_id'] == $content['user_id']))):?>
@@ -336,7 +336,15 @@
                         <?php endif ?>
                         <!-- Posted By-->
                         <p>
-                            @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
+                            <?php if(isset($_SESSION['isadmin'])): ?>
+                                <?php if(!empty($content['user_id']) || !is_null($content['user_id'])): ?>
+                                    <a href="admin_cud_users.php?user_id=<?= $content['user_id']?>">
+                                        @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
+                                    </a>
+                                <?php endif ?>
+                            <?php else: ?>
+                                @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
+                            <?php endif ?>
                         </p>
                         <!-- add the comments preview here  with the link to view more -->
                     </div>

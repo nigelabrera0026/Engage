@@ -36,7 +36,7 @@
         }
     }
     
-    
+
     /**
      * Executes a query to retrieve the user's part of the email from the database of existing user.
      * @param db PHP Data Object to use to SQL queries.
@@ -220,4 +220,25 @@
         return $file_extension_is_valid && $mime_type_is_valid;
     }
 
+
+    /**
+     * 
+     * 
+     * @param db
+     * @param content_id
+     * @return results
+     */
+    function retrieve_comments($db, $content_id) {
+        $query = "SELECT * FROM comments WHERE content_id = :content_id";
+
+        $statement = $db->prepare($query);
+        $content_id = filter_var($content_id, FILTER_SANITIZE_NUMBER_INT);
+
+        $statement->bindValue(':content_id', $content_id, PDO::PARAM_INT);
+
+        $statement->execute();
+
+        return $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+    }
 ?>

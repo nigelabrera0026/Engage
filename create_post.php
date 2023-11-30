@@ -172,21 +172,11 @@
                     $placeholders = implode(", ", array_map(function ($param) {
                         return $param;
                     }, array_keys($values)));
-
-                    // $values = implode(", ", $values);
-
-                    // TODO Wrong Logic
-                    // Appending the values to be fed in the query.
-                    // INSERT INTO contents(title, image and some shit) Values(:title, :content) 
-                    // then bind the fucking values in it.
                     
                     $query = "INSERT INTO contents($contents) VALUES ($placeholders)";
                     
                     // Preparation
                     $statement = $db->prepare($query);
-
-                    // print_r($values);
-                    // echo $contents;
 
                     // Binding
                     foreach($values as $param => $value) {
@@ -210,13 +200,10 @@
             }
         }
     } else { // Heads to Login 
-        header("Location: login.php");
+        header("Location: invalid_url.php");
         exit();
         
     }
-
-    // For Generating the genre list
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -295,8 +282,6 @@
                                     <?php endif ?>
                                 <?php endforeach ?>
                             </select>
-                            <!-- <label for="song_genre">Genre</label>
-                            <input type="text" name="song_genre" id="song_genre" /> -->
                         </div>
                     </fieldset>
                     <input type="submit" name="submit" value="Upload" />
