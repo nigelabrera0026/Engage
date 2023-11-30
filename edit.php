@@ -47,67 +47,6 @@
     // Global Var
     $error = [];
 
-    /**
-     * 
-     * @param db
-     * @param content_id
-     * @param title
-     * @return bool
-     */
-    function verify_content_title($db, $content_id, $title) {
-        $query = "SELECT * FROM contents WHERE title = :title";
-
-        $title = filter_var($title, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $statement = $db->prepare($query);
-        $statement->bindValue(':title', $title, PDO::PARAM_STR);
-        $statement->execute();
-        $results = $statement->fetch(PDO::FETCH_ASSOC);
-
-        // Check if there are exactly two columns in the result
-        if (!empty($results) && count($results) == 2) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-
-
-
-    /**
-     * Retrieving the genre name associated with the contents' ID.
-     * @param db PHP Data Object to use to SQL queries.
-     * @param content_id The content ID that is associated to the genre_id.
-     * @return genre_name The genre name that is retrieved from the database.
-     */
-    function retrieve_genre_name($db, $content_id) {
-        global $error;
-
-        $query = "SELECT genre_name FROM genres WHERE genre_id = (SELECT genre_id FROM contents WHERE content_id = :content_id)";
-        $statement = $db->prepare($query);
-        
-        if(isset($_GET['content_id'])) {
-            $content_id = filter_var($_GET['content_id'], FILTER_SANITIZE_NUMBER_INT);
-
-        } else {
-            $error[] = "Error! Invalid ID!";
-
-        }
-
-        $statement->bindValue(':content_id', $content_id, PDO::PARAM_INT);
-        $statement->execute();
-        $results = $statement->fetch(PDO::FETCH_ASSOC);
-
-        if(!is_null($results)) {
-            return $results['genre_name'];
-
-        } else {
-            $error[] = "Error! Database error.";
-
-        }
-    }
-
-
     // When the page loads generate existing content which is equal to the retrieve content.
     $query = "SELECT * FROM contents WHERE content_id = :content_id";
 
@@ -135,8 +74,6 @@
                 $values = [];
                 
                 if(!empty($title) && !empty($genre_name)) {
-                    // $contents[] = "title = :title";
-                    // $values[':title'] = $title;
 
                     $genre_id;
 

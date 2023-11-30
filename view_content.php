@@ -21,36 +21,43 @@
 
     // Generate the content.
     $query = "SELECT * FROM contents WHERE content_id = :content_id";
+    
     $statement = $db->prepare($query);
-
     $content_id = filter_var($_GET['content_id'], FILTER_SANITIZE_NUMBER_INT);
-
     $statement->bindValue('content_id', $content_id, PDO::PARAM_INT);
-
-    // if($statement->execute()) {
-        
-
-    // } else {
-    //     header("Location: invalid_url.php");
-    //     exit(); 
-    // }
-
     $statement->execute();
+
     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
-
-
     // POST for commenting.
-    
+    if($_SERVER['REQUEST_METHOD'] === 'POST'){
+
+        if($_POST && ($_POST['submit_comment'] == 'comment')){
+
+            if(!empty($_POST['comment'])) {
+
+                if(isset($_SESSION['client'])) {
+                    // INSERT INTO comments (user_id, admin_id, content_id, comments_text) VALUES ()
+                    $query = "INSERT INTO comments VALUES";
+                } else {
+
+                }
+
+            } else {
+                $error[] = "Invalid empty field!";
+
+            }
+        }
+    }
 
 ?>
 <!DOCTYPE html>
 <html lang="en">
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title></title>
-            <link rel="stylesheet" href="style.css">
-        </head>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title></title>
+        <link rel="stylesheet" href="style.css">
+    </head>
     <body>
         <header id="main-header">
             <nav>
@@ -121,12 +128,35 @@
                         <?php endif ?>
                     </p>
                     <!-- Comments -->
+                    <?php $comments = retrieve_comments($db, $content_id); ?>
                     <div>
                         <?php 
-                            // LOGIC retrieve all the comments that has the content_id
-                        
+                            /* LOGIC retrieve all the comments that has the content_id */
                         ?>
+                        <?php foreach($comments as $user_comment): ?>
+                            <?php if(is_null($comments['user_id'])): ?>
+                                <p>@<?= getUser($db, $comments['admin_id'], null) ?> ADMIN</p>
+                            <?php else: ?>
+                                <p>@<?= getUser($db, null, $comments['user_id']) ?> ADMIN</p>
+                            <?php endif ?>
+                            <p><?= $comments['comment_text']?></p>
+                        <?php endforeach ?>
                     </div>
+                    <!-- probably add some verification if session is set -->
+                    <!-- LOGIC: IF client exists proceed to post-->
+                    <!-- if non clients wants to comment they need to leave a username and do CAPTCHA -->
+                    <!-- if they don't leave a username, label it as anonymous -->
+                    <form action="view_content.php" method="post">
+                        <?php if(isset($_SESSION['client'])): ?>
+                            <p><?= username_cookie($_SESSION['client']) ?></p>
+                        <?php else: ?>
+                            <label for="username">Name:</label>
+                            <input type="text" name="username" id="username"/> 
+                        <?php endif ?>
+                        <label for="comment">Comment:</label>
+                        <textarea name="comment" id="comment"></textarea>
+                        <input type="submit" name="submit_comment" value="comment"/>
+                    </form>
                 </div>
             <?php endforeach ?>
         </div>

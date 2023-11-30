@@ -10,6 +10,13 @@
     require("connect.php");
     require('library.php');
 
+    /*
+    TODO: ADD LOGIC FOR INSERTING USERNAME.
+    
+
+
+    */
+
     $error = [];
     
     /**
@@ -49,8 +56,9 @@
         $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
         $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
         $confirm_password = filter_input(INPUT_POST,'confirm_password', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-        if(empty($email) || empty($password) || empty($confirm_password)){
+        if(empty($email) || empty($password) || empty($confirm_password) || empty($username)){
             $error[] = "Invalid Empty Fields.";
         
         } elseif($password != $confirm_password){
@@ -62,17 +70,17 @@
                 
             } else {
                 // true if it's an admin
-                if(user_or_admin($email)){
-                    $query = "INSERT INTO admins(email, password) VALUES (:email, :password)";
+                if(user_or_admin($email)){ // TODO add if username exists - non functional requirement.
+                    $query = "INSERT INTO admins(email, password, username) VALUES (:email, :password, :username)";
 
                 } else {
-                    $query = "INSERT INTO users(email, password) VALUES (:email, :password)";
-
+                    $query = "INSERT INTO users(email, password, username) VALUES (:email, :password, :username)";
                 }
 
                 $statement = $db->prepare($query);
                 $statement->bindValue(":email", $email, PDO::PARAM_STR);
                 $statement->bindValue(':password', hash_password($password));
+                $statement->bindValue(':username', $username, PDO::PARAM_STR);
 
 
                 if($statement->execute()) {
@@ -88,7 +96,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
+        <title>Join Us!</title>
     </head>
     <body>
         <header>
@@ -120,7 +128,7 @@
                             <a href="login.php">
                                 <button type="button">Sign In</button>
                             </a> 
-                        </li>   
+                        </li> 
                     <?php endif ?>
                 </ul>
             </nav>
@@ -132,6 +140,8 @@
                         <legend>Creating New Profile</legend>
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" />
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" />
                         <label for="password">Password</label>
                         <input type="password" id="password" name="password" required />
                         <label for="confirm_password">Re-type Password</label>

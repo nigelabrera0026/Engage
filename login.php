@@ -10,7 +10,7 @@
     require("connect.php");
     require("library.php");
     session_start();
-
+    
     // Global vars
     $error = [];
     $is_admin = false;
@@ -45,62 +45,118 @@
         
         } else {
             // Sanitization
-            $user = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $user = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
             $pwd = filter_input(INPUT_POST, 'pwd', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
-            // $hashedpwd = password_hash($pwd, PASSWORD_DEFAULT);
-
-            if(user_or_admin($user)) { // User or Admin
-                $query = "SELECT admin_id, email, password FROM admins WHERE email = :user ";
-
-                // Email Validation
-                // Preparation, Binding, Execution, and Retrieval
-                $statement = $db->prepare($query);
-                $statement->bindValue(':user', $user, PDO::PARAM_STR);
-                $statement->execute();
-                $result = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-                // If results returned correct information then
-                if(!$result) {
-                    $error[] = "Invalid Credentials!";
-                
-                // De-hashing password
-                } elseif(password_verify($pwd, $result[0]['password'])) {
-
-                    $_SESSION['isadmin'] = 1;
-
-                    $_SESSION['client_id'] = $result[0]['admin_id'];
-                    $_SESSION['client'] = $result[0]['email'];
-
-                    header("Location: index.php");
-                    exit();
-
-                } else {
-                    $error[] = "Invalid password!";
-
-                }
-            } else {
-                $query = "SELECT user_id, email, password FROM users WHERE email = :user ";
-
-                // Preparation, Binding, Execution, and Retrieval
-                $statement = $db->prepare($query);
-                $statement->bindValue(':user', $user, PDO::PARAM_STR);
-                $statement->execute();
-                $result = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-                if(!$result) {
-                    $error[] = "Invalid Credentials!";
-                
-                // De-hashing password
-                } elseif(password_verify($pwd, $result[0]['password'])) {
-                    $_SESSION['client'] = $result[0]['email'];
-                    $_SESSION['client_id'] = $result[0]['user_id'];
+            if(!email_or_username($user)) { // if it's an email.
+                if(user_or_admin($user)) { // User or Admin
+                    $query = "SELECT admin_id, email, password FROM admins WHERE email = :user ";
+    
+                    // Email Validation
+                    // Preparation, Binding, Execution, and Retrieval
+                    $statement = $db->prepare($query);
+                    $statement->bindValue(':user', $user, PDO::PARAM_STR);
+                    $statement->execute();
+                    $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+    
+                    // If results returned correct information then
+                    if(!$result) {
+                        $error[] = "Invalid Credentials!";
                     
-                    header("Location: index.php");
-                    exit();
+                    // De-hashing password
+                    } elseif(password_verify($pwd, $result[0]['password'])) {
+    
+                        $_SESSION['isadmin'] = 1;
+    
+                        $_SESSION['client_id'] = $result[0]['admin_id'];
+                        $_SESSION['client'] = $result[0]['email'];
+    
+                        header("Location: index.php");
+                        exit();
+    
+                    } else {
+                        $error[] = "Invalid password!";
+    
+                    }
+                } else {
+                    $query = "SELECT user_id, email, password FROM users WHERE email = :user ";
+    
+                    // Preparation, Binding, Execution, and Retrieval
+                    $statement = $db->prepare($query);
+                    $statement->bindValue(':user', $user, PDO::PARAM_STR);
+                    $statement->execute();
+                    $result = $statement->fetchAll(PDO::FETCH_ASSOC);
+    
+                    if(!$result) {
+                        $error[] = "Invalid Credentials!";
+                    
+                    // De-hashing password
+                    } elseif(password_verify($pwd, $result[0]['password'])) {
+                        $_SESSION['client'] = $result[0]['email'];
+                        $_SESSION['client_id'] = $result[0]['user_id'];
+                        
+                        header("Location: index.php");
+                        exit();
+    
+                    } else { 
+                        $error[] = "Invalid password!";
+                    }
+                }
+            } else { // if it's an username.
+                $trigger_login = 0;
 
-                } else { 
-                    $error[] = "Invalid password!";
+                $query = "SELECT * FROM admins WHERE username = :username";
+                $statement = $db->prepare($query);
+                $statement->bindValue(':username', $user, PDO::PARAM_STR);
+        
+                $statement->execute();
+                $admin_result = $statement->fetch(PDO::FETCH_ASSOC);
+        
+                if(!empty($admin_result)) {
+                    if(password_verify($pwd, $admin_result['password'])) {
+    
+                        $_SESSION['isadmin'] = 1;
+    
+                        $_SESSION['client_id'] = $admin_result['admin_id'];
+                        $_SESSION['client'] = $admin_result['email'];
+    
+                        header("Location: index.php");
+                        exit();
+    
+                    } else {
+                        $error[] = "Invalid password!";
+    
+                    }
+        
+                } else {
+                    $trigger_login++;
+                }
+        
+                $query = "SELECT * FROM users WHERE username = :username";
+                $statement = $db->prepare($query);
+                $statement->bindValue(':username', $user, PDO::PARAM_STR);
+                $statement->execute();
+                $user_result = $statement->fetch(PDO::FETCH_ASSOC);
+        
+                if(!empty($user_result)) {
+                    if(password_verify($pwd, $user_result['password'])) {
+    
+                        $_SESSION['client'] = $user_result['email'];
+                        $_SESSION['client_id'] = $user_result['user_id'];
+                        
+                        header("Location: index.php");
+                        exit();
+
+                    } else {
+                        $error[] = "Invalid password!";
+    
+                    }
+                } else {
+                    $trigger_login++;
+                }
+
+                if($trigger_login > 1) {
+                    $error[] = "Invalid, No user found.";
                 }
             }
         }
@@ -157,8 +213,8 @@
         </div>
         <div>
             <form method="post" action="login.php">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" />
+                <label for="email">Email/Username</label>
+                <input type="text" id="email" name="email" />
                 <label for="pwd">Password</label>
                 <input type="password" id="pwd" name="pwd" required/>
                 <button type="submit" id="login_submit">Enter</button>
