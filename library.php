@@ -7,6 +7,12 @@
 
     ****************/
 
+    /*
+        TODO: BEFORE SUBMISSION CLEAN LIBRARY FOR UNUSED FUNCTIONS.
+    
+    */
+
+
     function username_cookie($email) {
         $domain = explode('@', $email);
 
@@ -53,7 +59,6 @@
 
         }
     }
-    
 
     /**
      * Executes a query to retrieve the user's part of the email from the database of existing user.
@@ -136,7 +141,7 @@
         }
     }
 
-    /**
+    /** NOT USED
      * Retrieves id of the user.
      * @param db PHP Data Object to use to SQL queries.
      * @return result Fetched user or admin id from the database.
@@ -318,5 +323,36 @@
             $error[] = "Error! Database error.";
 
         }
+    }
+
+    /**
+     * 
+     * 
+     * 
+     */
+    function get_username($db, $user_id, $admin_id) {
+
+        $query;
+        $statement;
+
+        if(!is_null($admin_id) && !is_null($user_id)) {
+            $query = "SELECT username FROM users WHERE user_id = :user_id";
+            $statement = $db->prepare($query);
+            $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+        } elseif(!is_null($admin_id)) {
+            $query = "SELECT username FROM admins WHERE admin_id = :admin_id";
+            $statement = $db->prepare($query);
+            $statement->bindValue(':admin_id', $admin_id, PDO::PARAM_INT);
+        } else {
+            $query = "SELECT username FROM users WHERE user_id = :user_id";
+            $statement = $db->prepare($query);
+            $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+        }
+
+        $statement->execute();
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+        return $result['username'];
     }
 ?>
