@@ -252,7 +252,7 @@
      * @return results
      */
     function retrieve_comments($db, $content_id) {
-        $query = "SELECT * FROM comments WHERE content_id = :content_id";
+        $query = "SELECT * FROM comments WHERE content_id = :content_id ORDER BY date_posted DESC";
 
         $statement = $db->prepare($query);
         $content_id = filter_var($content_id, FILTER_SANITIZE_NUMBER_INT);
@@ -355,4 +355,6 @@
         $result = $statement->fetch(PDO::FETCH_ASSOC);
         return $result['username'];
     }
+
+
 ?>

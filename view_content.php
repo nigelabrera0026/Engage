@@ -8,6 +8,8 @@
     ****************/
     require("connect.php");
     require("library.php");
+    // require("captcha.php");
+
     session_start();
     /*
         Dev notes: session_start(); carries over all the session.
@@ -18,11 +20,22 @@
 
     // Global var
     $error = [];
+
+
+    if(isset($_SESSION['form_data'])) {
+        $form_data = $_SESSION['form_data'];
+        unset($_SESSION['form_data']);
+
+    } elseif(isset($_COOKIE['captcha_counter']) && ($_COOKIE['captcha_counter'] > 3)){
+        unset($_COOKIE['captcha_counter']);
+        // setcookie('captcha_counter', ''. time() - 3600);
+
+    }
     
     // POST for commenting.
     if($_SERVER['REQUEST_METHOD'] === 'POST'){
 
-        if($_POST && ($_POST['submit_comment'] == 'comment')){
+        if($_POST && ($_POST['submit_comment'] == 'Submit')){
 
             if(!empty($_POST['comment'])) {
                 // Container for columns to be set
@@ -32,6 +45,11 @@
                 // Filtration and Sanitization
                 $comment = filter_input(INPUT_POST, 'comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $content_id = filter_var($_COOKIE['content_id'], FILTER_VALIDATE_INT);
+
+                $captcha_trigger = false;
+                $execute = false;
+                // $captcha = filter_input(INPUT_POST, 'captcha', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                $captcha = $_POST['captcha'];
 
                 if(isset($_SESSION['client'])) {
                     $client_id = filter_var($_SESSION['client_id'], FILTER_VALIDATE_INT);
@@ -46,11 +64,66 @@
 
                     }
 
+                    // ready to be executed
+                    $execute = true; 
                 } else {
-                    // For non users, make username = "anonymous" 
-                    $contents[] = 'user_id';
-                    $values[':user_id'] = 0; // Anonymous user's ID.
 
+                    $captcha_trigger = true;
+
+                    // Apply the captcha thingy
+                    if(empty($_POST['username'])) {
+                        // For non users, make username = "anonymous" 
+                        $contents[] = 'user_id';
+                        $values[':user_id'] = 0; // Anonymous user's ID.
+
+                    } else {
+                        $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+                        $contents[] = 'username';
+                        $values[':username'] = $username;
+
+                    }  
+                }
+
+                if($captcha_trigger) {
+                    if(empty($captcha)) {
+                        $error[] = "Captcha is required!";
+
+
+                    } elseif($captcha === $_SESSION['captcha']) {
+                        // ready to be executed
+                        $execute = true;
+
+                    } else { // TODO ANALYZATION THEN PUSH!!
+                        if(isset($_COOKIE['captcha_counter'])){
+                            
+                            if($_COOKIE['captcha_counter'] == 3) {
+                                
+                                unset($_SESSION['form_data']);
+                                unset($_COOKIE['captcha_counter']);
+                                header("Location: index.php");
+                                exit();
+
+                            } elseif($_COOKIE['captcha_counter'] < 3) {
+                                setcookie('captcha_counter', $_COOKIE['captcha_counter'] + 1, time() + 60 * 60);
+
+                            }
+                        } else {
+                            // Initialize cookie.
+                            setcookie('captcha_counter', 1, time() + 60 * 60);
+
+                        }
+                        
+                        $_SESSION['form_data'] = [
+                            'form_username' => isset($username) ? $username : '',
+                            'user_captcha' => isset($captcha) ? $captcha : '',
+                            'comment' => isset($comment) ? $comment : ''
+                        ];
+
+                        // Saves the form to a session.
+                        $error[] = "Invalid Captcha!";
+                        header("Location: view_content.php?content_id=$content_id");
+                    }
                 }
 
                 $contents[] = "content_id";
@@ -58,6 +131,7 @@
 
                 $contents[] = "comments_text";
                 $values[':comments_text'] = $comment;
+
 
                 // Makes it 1 whole string with a , separator
                 $contents = implode(", ", $contents);
@@ -77,15 +151,17 @@
                     
                 }
 
-                // Execution
-                if($statement->execute()) {
-                    header("Location: index.php");
-                    exit();
+                if($execute) {
+                    // Execution
+                    if($statement->execute()) {
+                        header("Location: view_content.php?content_id=$content_id");
+                        exit();
 
-                } else {
-                    $error[] = "Execution failed!";
+                    } else {
+                        $error[] = "Execution failed!";
+                    }
+
                 }
-
             } else {
                 $error[] = "Invalid empty field!";
 
@@ -111,6 +187,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title></title>
         <link rel="stylesheet" href="style.css">
+        <script src="./scripts/captcha_scripts.js"></script>
     </head>
     <body>
         <header id="main-header">
@@ -181,37 +258,58 @@
                             @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
                         <?php endif ?>
                     </p>
+                    <!-- upload a comment-->
+                    <div>
+                        <form action="view_content.php" method="post">
+                            <?php if(isset($_SESSION['client'])): ?>
+                                <p><?= username_cookie($_SESSION['client']) ?></p>
+                            <?php else: ?>
+                                <label for="username">Username</label>
+                                <?php if(!empty($form_data['form_username'])): ?>
+                                    <input type="text" name="username" id="username" value="<?= htmlspecialchars($form_data['form_username']) ?>"/>
+                                <?php else: ?>
+                                    <input type="text" name="username" id="username" />
+                                <?php endif ?>
+                                <label for="captcha">Enter the letters below to prove you are human.</label>
+                                <img src="captcha.php?rand=<?= rand() ?>" id="captcha_image" alt="CAPTCHA IMAGE" />
+                                <?php if(!empty($form_data['user_captcha'])): ?>
+                                    <input type="text" name="captcha" id="captcha" value="<?= htmlspecialchars($form_data['user_captcha']) ?>"/>
+                                <?php else: ?>
+                                    <input type="text" name="captcha" id="captcha"/>
+                                <?php endif ?>
+                                <?php if(isset($_COOKIE['captcha_counter'])): ?>
+                                    <p>Invalid captcha! Try again.</p>
+                                <?php endif ?>
+                                <p>Can't read the image?<a href="javascript: refreshCaptcha();">click here</a> to refresh the page</p>
+                            <?php endif ?>
+                            <label for="comment">Comment: </label>
+                            <?php if(!empty($form_data['comment'])): ?>
+                                <textarea name="comment" id="comment"><?= htmlspecialchars($form_data['comment'])?></textarea>
+                            <?php else: ?>
+                                <textarea name="comment" id="comment"></textarea>
+                            <?php endif ?>
+                            <input type="submit" name="submit_comment" value="Submit"/>
+                        </form>
+                    </div>
                     <!-- Comments -->
                     <?php $comments = retrieve_comments($db, $content_id); ?>
-                    <!-- <?= print_r($comments)?> -->
-                    <div>
-                        <?php 
-                            /* LOGIC retrieve all the comments that has the content_id */
-                        ?>
-                        <?php foreach($comments as $user_comment): ?>
-                            <!-- <?= print_r($user_comment)?> -->
-                            <?php if(is_null($user_comment['user_id'])): ?>
-                                <p>@<?= get_username($db,  null, $user_comment['admin_id']) ?> ADMIN</p>
-                            <?php elseif($user_comment['user_id'] == 0): ?>
-                                <p>@<?= get_username($db, 0, null) ?></p>
+                    <div> <!-- Generating Comments-->
+                        <?php foreach($comments as $user_comment): ?> <!-- Apply if comments have username-->
+                            <?php if(empty($user_comment['username'])): ?>
+                                <?php if(is_null($user_comment['user_id'])): ?>
+                                    <p>@<?= get_username($db,  null, $user_comment['admin_id']) ?> ADMIN</p>
+                                <?php elseif($user_comment['user_id'] == 0): ?>
+                                    <p>@<?= get_username($db, 0, null) ?></p>
+                                <?php else: ?>
+                                    <p>@<?= get_username($db, $user_comment['user_id'], null) ?></p>
+                                <?php endif ?>
                             <?php else: ?>
-                                <p>@<?= get_username($db, $user_comment['user_id'], null) ?></p>
+                                <p>@<?= $user_comment['username'] ?></p>
                             <?php endif ?>
                             <p><?= $user_comment['comments_text']?></p>
+                            <p><?= $user_comment['date_posted']?></p>
                         <?php endforeach ?>
                     </div>
-                    <!-- probably add some verification if session is set -->
-                    <!-- LOGIC: IF client exists proceed to post-->
-                    <!-- if non clients wants to comment they need to leave a username and do CAPTCHA -->
-                    <!-- if they don't leave a username, label it as anonymous -->
-                    <form action="view_content.php" method="post">
-                        <?php if(isset($_SESSION['client'])): ?>
-                            <p><?= username_cookie($_SESSION['client']) ?></p>
-                        <?php endif ?>
-                        <label for="comment">Comment:</label>
-                        <textarea name="comment" id="comment"></textarea>
-                        <input type="submit" name="submit_comment" value="comment"/>
-                    </form>
                 </div>
             <?php endforeach ?>
         </div>

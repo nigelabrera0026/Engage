@@ -59,6 +59,12 @@
     $error = [];
 
 
+    if(isset($_COOKIE['captcha_counter']) || isset($_SESSION['form_data'])) {
+        setcookie('captcha_counter', '', time() - 3600);
+        unset($_SESSION['form_data']);
+    } 
+
+
     // When the page loads.
     $query = "SELECT * FROM contents LIMIT 30"; 
 
