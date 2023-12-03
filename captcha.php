@@ -104,11 +104,16 @@
     header('Content-Type: image/jpeg'); 
     imagejpeg($captcha_image); //showing the image
     imagedestroy($captcha_image); //destroying the image instance
-    $_SESSION['captcha'] = $captcha_code;
+    $_SESSION['captcha'] = $captcha_code; // Session for the captcha
 
-    /* */
+    /**
+     * Converting hexadecimal to integer to be used for the colors.
+     * @param hexstring The hexadecimal value to be converted to string.
+     * @return array The converted hexadecimal to integer to be used for the color.
+     * */
     function hextorgb($hexstring) {
         $integer = hexdec($hexstring);
+
         return array("red" => 0xFF & ($integer >> 0x10),
                     "green" => 0xFF & ($integer >> 0x8),
                     "blue" => 0xFF & $integer);

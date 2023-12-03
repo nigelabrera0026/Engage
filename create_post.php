@@ -224,7 +224,7 @@
                     <?php if(isset($_SESSION['client'])): ?>
                         <li><!-- Style it to the middle-->
                             <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
-                                <?= username_cookie($_SESSION['client']) ?>
+                                <?= username_cookie($db, $_SESSION['client']) ?>
                             </a>
                         </li>
                         <li>

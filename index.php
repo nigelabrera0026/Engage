@@ -60,7 +60,7 @@
 
 
     if(isset($_COOKIE['captcha_counter']) || isset($_SESSION['form_data'])) {
-        setcookie('captcha_counter', '', time() - 3600);
+        setcookie('captcha_counter', '', time());
         unset($_SESSION['form_data']);
     } 
 
@@ -164,41 +164,12 @@
 
         }
     }
-
-    // When content loads.
-    
-    // Logic is included in the search
-    // if(isset($_GET['sort_title']) ) {
-    //     $sort_title = $_GET['sort_title'];
-
-    //     if($sort_title !== 'ASC' || $sort_title !== 'DESC') {
-    //         $sort_title = 'ASC';
-
-    //     } 
-
-    //     $query = "SELECT * FROM contents WHERE title ORDER BY title $sort_title LIMIT 30";
-    // } else {
-    //     $query = "SELECT * FROM contents LIMIT 30"; 
-    // }
-    
-    // if(isset($_GET['sort_date'])){
-    //     $sort_date = $_GET['sort_date'];
-
-    //     if($sort_date !== 'ASC' || $sort_date !== 'DESC'){
-    //         $sort_date = 'ASC';
-
-    //     } else {
-            
-            
-    //     }
-    // }
-
   
 
 ?>
 <!DOCTYPE html>
 <html lang="en">
-    <?php include 'header.php'; ?>
+    <?php include('header.php'); ?>
     <body>
         <header id="main-header">
             <nav>
@@ -208,7 +179,7 @@
                     <?php if(isset($_SESSION['client'])): ?>
                         <li><!-- Style it to the middle-->
                             <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
-                                <?= username_cookie($_SESSION['client'])  ?>
+                                <?= username_cookie($db, $_SESSION['client'])  ?>
                             </a>
                         </li>
                         <li>
@@ -340,23 +311,25 @@
                                 <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>
                             </audio>
                         <?php endif ?>
-                        <!-- Posted By-->
-                        <p>
-                            <?php if(isset($_SESSION['isadmin'])): ?>
-                                <?php if(!empty($content['user_id']) || !is_null($content['user_id'])): ?>
+                        <p> <!-- Posted By-->
+                            <?php if(!empty($content['user_id'])): ?>
+                                <?php if(isset($_SESSION['isadmin'])): ?>
                                     <a href="admin_cud_users.php?user_id=<?= $content['user_id']?>">
                                         @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
                                     </a>
+                                <?php else: ?>
+                                    @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
                                 <?php endif ?>
                             <?php else: ?>
                                 @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
                             <?php endif ?>
                         </p>
-                        <!-- add the comments preview here  with the link to view more -->
+                        <!-- add the comments preview here  with the link to view more not required, only for design. -->
                     </div>
                 <?php endforeach ?>
             </div>
         </main>
+        <?php include("footer.php") ?>
     </body>
 </html>
 

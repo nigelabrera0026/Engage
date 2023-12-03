@@ -18,7 +18,7 @@
     if(isset($_SESSION['isadmin'])) {
         $user_id = filter_input(INPUT_GET, 'user_id', FILTER_VALIDATE_INT);
 
-        if()
+        // if();
     } else {
         header("Location: invalid_url.php");
         exit();

@@ -13,10 +13,39 @@
     */
 
 
-    function username_cookie($email) {
-        $domain = explode('@', $email);
+    /**
+     * Determines if the logged user is admin or not then will fetch a query.
+     * @param db
+     * @param email
+     */
+    function username_cookie($db, $email) {
+        if(user_or_admin($email) && isset($_SESSION['isadmin'])) {
+            $query = "SELECT username FROM admins WHERE email = :email";
 
-        return $domain[0];
+            $statement = $db->prepare($query);
+            $email = filter_var($email, FILTER_VALIDATE_EMAIL);
+            $statement->bindValue('email', $email, PDO::PARAM_STR);
+            $statement->execute();
+            $results = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if(!empty($results)) {
+                return $results['username'];
+
+            }
+        } else {
+            $query = "SELECT username FROM users WHERE email = :email";
+
+            $statement = $db->prepare($query);
+            $email = filter_var($email, FILTER_VALIDATE_EMAIL);
+            $statement->bindValue('email', $email, PDO::PARAM_STR);
+            $statement->execute();
+            $results = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if(!empty($results)) {
+                return $results['username'];
+
+            }
+        }
     }
 
     function email_or_username($email) {
@@ -72,15 +101,22 @@
         $query;
         $statement;
 
-        if(!is_null($admin_id)){
-            $query = "SELECT email FROM admins WHERE admin_id = :admin_id";
-            $statement = $db->prepare($query);
-            $statement->bindValue(":admin_id", $admin_id, PDO::PARAM_INT);
+        if((!is_null($admin_id) && !is_null($user_id)) || 
+           (is_null($admin_id) && !is_null($user_id))) {
+            $query = "SELECT username FROM users WHERE user_id = :user_id";
 
-        } elseif(!is_null($user_id)) {
-            $query = "SELECT email FROM users WHERE user_id = :user_id";
             $statement = $db->prepare($query);
+            // Validation
+            $user_id = filter_var($user_id, FILTER_VALIDATE_INT);
             $statement->bindValue(":user_id", $user_id, PDO::PARAM_INT);
+
+        } elseif(!is_null($admin_id) && is_null($user_id)) {
+            $query = "SELECT username FROM admins WHERE admin_id = :admin_id";
+
+            $statement = $db->prepare($query);
+            // Validation
+            $admin_id = filter_var($admin_id, FILTER_VALIDATE_INT);
+            $statement->bindValue(":admin_id", $admin_id, PDO::PARAM_INT);
 
         } else {
             global $error;
@@ -90,13 +126,7 @@
         $statement->execute();
         $result = $statement->fetch(PDO::FETCH_ASSOC);
         
-        if(!empty($result)) {
-            $domain = explode('@', $result['email']);
-            return $domain[0];
-
-        } else {
-            return "Error: DB Error.";
-        }
+        return $result['username'];
     }
 
     /**
@@ -357,4 +387,5 @@
     }
 
 
+    
 ?>

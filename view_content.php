@@ -8,27 +8,19 @@
     ****************/
     require("connect.php");
     require("library.php");
-    // require("captcha.php");
 
     session_start();
-    /*
-        Dev notes: session_start(); carries over all the session.
-
-        VIEW CONTENT WILL BE VIEWED WITH COMMENTS.
-        AND COMMENTS CAN INCLUDE DOCS.
-    */
 
     // Global var
     $error = [];
 
-
+    // Trigger cookies if captcha is invalid.
     if(isset($_SESSION['form_data'])) {
         $form_data = $_SESSION['form_data'];
         unset($_SESSION['form_data']);
 
     } elseif(isset($_COOKIE['captcha_counter']) && ($_COOKIE['captcha_counter'] > 3)){
         unset($_COOKIE['captcha_counter']);
-        // setcookie('captcha_counter', ''. time() - 3600);
 
     }
     
@@ -46,9 +38,11 @@
                 $comment = filter_input(INPUT_POST, 'comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $content_id = filter_var($_COOKIE['content_id'], FILTER_VALIDATE_INT);
 
-                $captcha_trigger = false;
-                $execute = false;
-                // $captcha = filter_input(INPUT_POST, 'captcha', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                $captcha_trigger = false; // if we need to include a captcha
+                $execute = false;         // Trigger if we allow execution of query
+
+
+                $captcha = filter_input(INPUT_POST, 'captcha', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $captcha = $_POST['captcha'];
 
                 if(isset($_SESSION['client'])) {
@@ -67,16 +61,15 @@
                     // ready to be executed
                     $execute = true; 
                 } else {
-
+                    // Apply the captcha thingy
                     $captcha_trigger = true;
 
-                    // Apply the captcha thingy
                     if(empty($_POST['username'])) {
                         // For non users, make username = "anonymous" 
                         $contents[] = 'user_id';
                         $values[':user_id'] = 0; // Anonymous user's ID.
 
-                    } else {
+                    } else { // if guest inserted a username
                         $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
                         $contents[] = 'username';
@@ -85,16 +78,16 @@
                     }  
                 }
 
-                if($captcha_trigger) {
+                if($captcha_trigger) { // Need to include captcha in the submission.
+
                     if(empty($captcha)) {
                         $error[] = "Captcha is required!";
-
 
                     } elseif($captcha === $_SESSION['captcha']) {
                         // ready to be executed
                         $execute = true;
 
-                    } else { // TODO ANALYZATION THEN PUSH!!
+                    } else {
                         if(isset($_COOKIE['captcha_counter'])){
                             
                             if($_COOKIE['captcha_counter'] == 3) {
@@ -133,7 +126,7 @@
                 $values[':comments_text'] = $comment;
 
 
-                // Makes it 1 whole string with a , separator
+                // Makes it 1 whole string with a " , " separator
                 $contents = implode(", ", $contents);
                     
                 $placeholders = implode(", ", array_map(function ($param) {
@@ -151,9 +144,11 @@
                     
                 }
 
+                // Trigger if we allow execution since everything pass the check.
                 if($execute) {
                     // Execution
                     if($statement->execute()) {
+                        setcookie('captcha_counter', null, time() - 3600);
                         header("Location: view_content.php?content_id=$content_id");
                         exit();
 
@@ -164,10 +159,13 @@
                 }
             } else {
                 $error[] = "Invalid empty field!";
-
             }
         }
     }
+
+
+
+
 
     // Generate the content.
     $query = "SELECT * FROM contents WHERE content_id = :content_id";
@@ -186,7 +184,7 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title></title>
-        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="./bootstrap/css/bootstrap.css">
         <script src="./scripts/captcha_scripts.js"></script>
     </head>
     <body>
@@ -198,7 +196,7 @@
                     <?php if(isset($_SESSION['client'])): ?>
                         <li><!-- Style it to the middle-->
                             <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
-                                <?= username_cookie($_SESSION['client'])  ?>
+                                <?= username_cookie($db, $_SESSION['client'])  ?>
                             </a>
                         </li>
                         <li>
@@ -231,7 +229,8 @@
         <div> <!-- Link for creating new post -->
             <?php foreach($results as $content): ?>
                 <div>
-                    <?php if(isset($_SESSION['isadmin']) || (isset($_SESSION['client_id']) && ($_SESSION['client_id'] == $content['user_id']))):?>
+                    <?php if(isset($_SESSION['isadmin']) || (isset($_SESSION['client_id']) && 
+                    ($_SESSION['client_id'] == $content['user_id']))):?>
                         <a href="edit.php?content_id=<?=$content['content_id']?>">
                             <button type="button">Edit</button>
                         </a>
@@ -262,25 +261,31 @@
                     <div>
                         <form action="view_content.php" method="post">
                             <?php if(isset($_SESSION['client'])): ?>
-                                <p><?= username_cookie($_SESSION['client']) ?></p>
+                                <p><?= username_cookie($db, $_SESSION['client']) ?></p>
                             <?php else: ?>
                                 <label for="username">Username</label>
                                 <?php if(!empty($form_data['form_username'])): ?>
-                                    <input type="text" name="username" id="username" value="<?= htmlspecialchars($form_data['form_username']) ?>"/>
+                                    <input type="text" name="username" id="username" value="
+                                    <?= htmlspecialchars($form_data['form_username']) ?>"
+                                    />
                                 <?php else: ?>
                                     <input type="text" name="username" id="username" />
                                 <?php endif ?>
                                 <label for="captcha">Enter the letters below to prove you are human.</label>
                                 <img src="captcha.php?rand=<?= rand() ?>" id="captcha_image" alt="CAPTCHA IMAGE" />
                                 <?php if(!empty($form_data['user_captcha'])): ?>
-                                    <input type="text" name="captcha" id="captcha" value="<?= htmlspecialchars($form_data['user_captcha']) ?>"/>
+                                    <input type="text" name="captcha" id="captcha" value="
+                                    <?= htmlspecialchars($form_data['user_captcha']) ?>"
+                                    />
                                 <?php else: ?>
                                     <input type="text" name="captcha" id="captcha"/>
                                 <?php endif ?>
-                                <?php if(isset($_COOKIE['captcha_counter'])): ?>
+                                <?php if(!empty($_COOKIE['captcha_counter'])): ?>
                                     <p>Invalid captcha! Try again.</p>
+                                <?php else: ?>
+                                    <p></p>
                                 <?php endif ?>
-                                <p>Can't read the image?<a href="javascript: refreshCaptcha();">click here</a> to refresh the page</p>
+                                <p>Can't read it? <a href="javascript: refreshCaptcha();">click here</a> to generate another one.</p>
                             <?php endif ?>
                             <label for="comment">Comment: </label>
                             <?php if(!empty($form_data['comment'])): ?>
@@ -293,7 +298,8 @@
                     </div>
                     <!-- Comments -->
                     <?php $comments = retrieve_comments($db, $content_id); ?>
-                    <div> <!-- Generating Comments-->
+                    <?= print_r($comments) ?>
+                    <div> <!-- Generating Comments -->
                         <?php foreach($comments as $user_comment): ?> <!-- Apply if comments have username-->
                             <?php if(empty($user_comment['username'])): ?>
                                 <?php if(is_null($user_comment['user_id'])): ?>
@@ -307,11 +313,18 @@
                                 <p>@<?= $user_comment['username'] ?></p>
                             <?php endif ?>
                             <p><?= $user_comment['comments_text']?></p>
+                            <?php if(isset($_SESSION['isadmin'])): ?>
+                                <a href="edit_comment.php?comment_id=<?= $user_comment['comment_id']?>">
+
+                                    <button type="button">Edit Comment</button>
+                                </a>
+                            <?php endif ?>
                             <p><?= $user_comment['date_posted']?></p>
                         <?php endforeach ?>
                     </div>
                 </div>
             <?php endforeach ?>
         </div>
+        <?php include("footer.php"); ?>
     </body>
 </html>

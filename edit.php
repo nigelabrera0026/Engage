@@ -232,6 +232,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src="./scripts/create_post_scripts.js"></script>
+        <link rel="stylesheet" href="./bootstrap/css/bootstrap.css">
         <title>Edit Content</title>
     </head>
     <body>
@@ -240,11 +241,12 @@
             <nav>
                 <ul>
                     <li>Engage</li> <!-- Logo -->
-                    <?= $content_id ?>
                     <li><a href="index.php">Home</a></li>
                     <?php if(isset($_SESSION['client'])): ?>
                         <li><!-- Style it to the middle-->
-                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">My stuff</a>
+                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
+                                <?= username_cookie($db, $_SESSION['client'])  ?>
+                            </a>
                         </li>
                         <li>
                             <a href="logout.php">
@@ -313,8 +315,6 @@
                                         <?php endif ?>
                                     <?php endforeach ?>
                                 </select>
-                                <!-- <label for="song_genre">Genre</label>
-                                <input type="text" name="song_genre" id="song_genre" value="<?= retrieve_genre_name($db, $content_id); ?>"/> -->
                             </div>
                         </fieldset>
                         <input type="submit" name="submit" value="Update" />
@@ -325,5 +325,6 @@
                 <?php endif ?>
             </div>
         </main>
+        <?php include('footer.php');?>
     </body>
 </html>
