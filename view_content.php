@@ -183,38 +183,46 @@
 <html lang="en">
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title></title>
+        <title>Engage</title>
         <link rel="stylesheet" href="./bootstrap/css/bootstrap.css">
         <script src="./scripts/captcha_scripts.js"></script>
     </head>
     <body>
-        <header id="main-header">
-            <nav>
-                <ul>
-                    <li>Engage</li> <!-- Logo -->
-                    <li><a href="index.php">Home</a></li>
-                    <?php if(isset($_SESSION['client'])): ?>
-                        <li><!-- Style it to the middle-->
-                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
-                                <?= username_cookie($db, $_SESSION['client'])  ?>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="logout.php">
-                                <button type="button">Sign out</button>
-                            </a>
-                        </li>
-                    <?php else: ?>
-                        <li>
-                            <a href="login.php">
-                                <button type="button">Sign In</button>
-                            </a> 
-                        </li>   
-                    <?php endif ?>
-                </ul>
-            </nav>
+        <header class="bg-dark text-white p-3">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <span class="navbar-brand">Engage</span>
+                    </div>
+                    <div class="col-md-8">
+                        <nav class="navbar navbar-expand-md justify-content-end">
+                            <ul class="navbar-nav">
+                                <li class="nav-item ms-3">
+                                    <a href="index.php" class="nav-link text-light">Home</a>
+                                </li>
+                                <?php if(isset($_SESSION['client'])): ?>
+                                    <li class="nav-item ms-3">
+                                        <p class="nav-link text-light">Hello, <?= username_cookie($db, $_SESSION['client']) ?>!</p>
+                                    </li>
+                                    <li class="nav-item ms-3">
+                                        <a href="logout.php" class="nav-link">
+                                            <button type="button" class="btn btn-danger">Sign out</button>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="nav-item ms-3">
+                                        <a href="login.php" class="nav-link">
+                                            <button type="button" class="btn btn-primary">Sign In</button>
+                                        </a>
+                                    </li>
+                                <?php endif ?>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
         </header>
-        <div>
+        <div class="container mt-4">
             <?php if(!empty($error)):?>
                 <div>
                     <h1>Error(s):</h1>
@@ -247,14 +255,8 @@
                     <?php endif ?>
                     <!-- Posted By-->
                     <p>
-                        <?php if(isset($_SESSION['isadmin'])): ?>
-                            <?php if(!empty($content['user_id']) || !is_null($content['user_id'])): ?>
-                                <a href="admin_cud_users.php?user_id=<?= $content['user_id']?>">
-                                    @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
-                                </a>
-                            <?php endif ?>
-                        <?php else: ?>
-                            @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
+                        <?php if(!empty($content['user_id']) || !is_null($content['user_id'])): ?>
+                             @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
                         <?php endif ?>
                     </p>
                     <!-- upload a comment-->
@@ -298,7 +300,6 @@
                     </div>
                     <!-- Comments -->
                     <?php $comments = retrieve_comments($db, $content_id); ?>
-                    <?= print_r($comments) ?>
                     <div> <!-- Generating Comments -->
                         <?php foreach($comments as $user_comment): ?> <!-- Apply if comments have username-->
                             <?php if(empty($user_comment['username'])): ?>
@@ -314,17 +315,30 @@
                             <?php endif ?>
                             <p><?= $user_comment['comments_text']?></p>
                             <?php if(isset($_SESSION['isadmin'])): ?>
-                                <a href="edit_comment.php?comment_id=<?= $user_comment['comment_id']?>">
-
-                                    <button type="button">Edit Comment</button>
-                                </a>
+                                <?php if(isset($_SESSION['client_id']) && ($_SESSION['client_id'] == $user_comment['admin_id'])):?>
+                                    <a href="edit_comment.php?comment_id=<?= $user_comment['comment_id']?>">
+                                        <button type="button">Edit Comment</button>
+                                    </a>
+                                <?php elseif(is_null($user_comment['user_id']) && !is_null($user_comment['admin_id'])): ?>
+                                    <p></p>
+                                <?php elseif(!is_null(($user_comment['user_id'])) && !is_null($user_comment['admin_id'])): ?>
+                                    <a href="edit_comment.php?comment_id=<?= $user_comment['comment_id']?>">
+                                        <button type="button">Edit Comment</button>
+                                    </a>
+                                <?php else: ?>
+                                    <a href="edit_comment.php?comment_id=<?= $user_comment['comment_id']?>">
+                                        <button type="button">Edit Comment</button>
+                                    </a>
+                                <?php endif ?>
                             <?php endif ?>
                             <p><?= $user_comment['date_posted']?></p>
+                            <br><br><br>
                         <?php endforeach ?>
                     </div>
                 </div>
             <?php endforeach ?>
         </div>
         <?php include("footer.php"); ?>
+        <script src="./bootstrap/js/bootstrap.js"></script>
     </body>
 </html>

@@ -38,7 +38,7 @@
 
 
                 $query = "UPDATE comments 
-                          SET comments_text = :comments_text, admin_id = :admin_id 
+                          SET comments_text = :comments_text, admin_id = :admin_id
                           WHERE comment_id = :comment_id";
 
                 $statement = $db->prepare($query);

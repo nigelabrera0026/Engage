@@ -12,4 +12,4 @@
         <p>Test Footer</p>
     </div>
 </footer>
-<script src="./bootstrap/js/bootstrap.js"></script>
+

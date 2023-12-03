@@ -25,9 +25,6 @@
     
         CONTROL FLOW FOR UPDATE:
 
-        TODO File Handling DONE!
-        If empty(files like img and audio) continue without them 
-
         TODO Verification of the Title, Existence logic. To be Tested
         Create the logic for inserting Title 
         (TBH it doesn't reallly matter if you just insert it an all that. Fix it in your own project.);
@@ -57,11 +54,13 @@
     $statement->execute();
     $results = $statement->fetch(PDO::FETCH_ASSOC);
 
+    
 
 
     // Form is submitted
-    if(isset($_SESSION['client'])) { // TODO URL handling if the client is the real creator. prolly a function
-        
+    if((isset($_SESSION['client']) && ($results['user_id'] == $_SESSION['client_id'])) 
+        || isset($_SESSION['isadmin'])) { 
+
         if($_SERVER['REQUEST_METHOD'] == "POST") {
             // Update Query
             if($_POST && $_POST['submit'] == 'Update'){
@@ -106,7 +105,7 @@
 
                     } 
 
-                    // TODO Point of Interest 
+                    // TODO Point of Interest non functional requirements.
                     // If title exists in the db like ie changing a title to an existing one, invalid. 
                     // Tenta solution, create a function that will test if it exists or if it's the same as 
                     // Title upload
@@ -119,6 +118,21 @@
 
                     }
                     
+                    // If updating the image to remove it, is checked
+                    if(isset($_POST['remove_set_image']) && ($_POST['remove_set_image'] === "yes")){
+                        $contents[] = "images = :images";
+                        $values[':images'] = null;
+                        $contents[] = "image_name = :image_name";
+                        $values[':image_name'] = null;
+
+                        if(isset($_POST['image_name_db'])) { // Deleting files in File system
+                            $image_name = $_POST['image_name_db'];
+                            unlink("./uploads/$image_name"); 
+                            unlink("./uploads_thumbnail/$image_name"); 
+                            unlink("./uploads_medium/$image_name"); 
+                        }
+                    }
+
                     $file_upload_detected = isset($_FILES['image_cover']) && ($_FILES['image_cover']['error'] === 0) 
                     && isset($_FILES['song_file']) && ($_FILES['song_file']['error'] === 0);
 
@@ -224,6 +238,8 @@
         }
     } else {
         // probably prompt no for 2 seconds and head to index.php
+        header("Location: invalid_url.php");
+        exit();
     }
 ?>
 <!DOCTYPE html>
@@ -284,6 +300,8 @@
                                 <?php if(isset($results['images'])): ?>
                                     <label for="image_cover">Image Preview</label>
                                     <img id="image_preview" src="data:image/*;base64,<?= base64_encode($results['images']) ?>" alt="Image Preview" style="max-width: 100%; max-height: 200px;">
+                                    <label for="remove_set_image">Remove image? </label>
+                                    <input type="checkbox" id="remove_set_image" name="remove_set_image" value="yes"/>
                                 <?php else: ?>
                                     <label for="image_cover">Image Preview</label>
                                     <img id="image_preview" src="#" alt="Image Preview" style="max-width: 100%; max-height: 200px; display: none;">
@@ -301,6 +319,7 @@
                                 <button type="button" id="remove_song_file" style="display: block;">Remove Song</button>
                                 <label for="song_name">Title</label>
                                 <input type="text" name="song_name" id="song_name" value="<?= $results['title']?>"/>
+                                <input type="hidden" name="image_name_db" value="<?= $results['image_name']?>"/>
                                 <select name="song_genre" id="song_genre">
                                     <?php $genres = retrieve_genres($db, null) ?>
                                     <option value="<?= retrieve_genre_name($db, $content_id); ?>" selected>

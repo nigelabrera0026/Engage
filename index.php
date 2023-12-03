@@ -10,50 +10,19 @@
     require("library.php");
     session_start();
 
+    
 
 
     /*
-        TODO ADMIN CRUD PRIV FOR USERS
-        LOGIC { }
-        TODO USE BOOTSTRAP FOR CSS
-        TODO FIXME search algorithm and, title, date sortation.
-        Sort Genre DONE
+        TODO ADMIN CRUD PRIV FOR USERS !!!! CREATE A MODERATE BUTTON IF ADMIN EXISTS
+        TODO USE BOOTSTRAP FOR CSS PENDING
+        TODO FIXME search algorithm and, title, date sortation. PENDING
 
         Dev notes: session_start(); carries over all the session.
 
-        CONTROL FLOW:
-
-        check if session is set for user or admin.
-        if yes, prompt create, update, delete post by the user.
-        if no, hide prompt
-        fetch all content and display it 
-        link to the login 
 
         
-        CONTROL FLOW FOR SORTATION LOGIC
-        
     */
-
-    /*
-  
-    Control flow for Comments.
-    Control flow for Sortation
-
-    Logic for URL handling of edit
-    in edit.php 
-    if($_SESSION['isadmin']){}
-    elseif($_SESSION == $content['user_id']){}
-    else{header('index.php')}
-    */
-
-    // Logic for user profile.php
-    // if(isset($_SESSION['isadmin'])) {
-    //     $query = "SELECT * FROM contents WHERE "
-    // } elseif(isset($_SESSION['client'])) {
-
-    // } else {
-
-    // }
 
     // Global
     $error = [];
@@ -72,6 +41,44 @@
     $statement->execute();
     
     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+    /*
+        CONTROL FLOW FOR LIST SORTATION
+        LIST SORT BY TITLE, GENRE ( DONE ), CREATED DATE/ POSTED DATE
+        USET GET
+
+        CONTROL FLOW FOR SEARCH - ALL PAGES (PROBABLY SEPARATE THE REQUEST METHOD POST TO ANOTHER FILE SO IT COULD BE DYNAMIC?)
+
+        Search for specific pages by keyword using a search form.
+        - A search form is available at the top of all pages.
+
+        - The keyword or keywords entered into the search form will 
+        be used to search for pages that include the provided word or phrase.
+
+        - At a minimum the page name will be searched using a SQL LIKE query with wildcards, 
+        but other page properties can also be searched.
+
+        - The search will result in a list of links to all found pages.
+
+        Search for specific pages by keyword while limiting the search results to a specific category of pages.
+        - Assumes page categories have been implemented as defined in feature 2.4.
+        - This is not a search for categories. The user provided keywords are still used to search for pages. 
+        - The search form includes a dropdown menu to restrict the search to pages from a specific category.
+        - The provided category dropdown includes all page categories from feature 2.4, 
+        along with the option to search all categories.
+        - When "all categories" is selected search works as in 3.1, 
+        otherwise search results only include pages from selected category.
+
+        Search results are paginated. (probably not? will check, we need to implement bootstrap soon)
+        - Pagination is the process of dividing up your search results 
+        into discrete pages. Each of your result pages should include at most N search results.
+
+        - Below each page of search results is a set of links to all available pages, 
+        along with previous page and next page links (if applicable).
+
+        - Pagination links are only shown if there are greater than N search results. 
+        - For testing purposes it should be easy to switch the value of N to a smaller or larger number.
+    */
 
     // TODO TEST
     // If search is clicked. 
@@ -169,33 +176,53 @@
 ?>
 <!DOCTYPE html>
 <html lang="en">
-    <?php include('header.php'); ?>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Engage</title>
+        <link rel="stylesheet" href="./bootstrap/css/bootstrap.css">
+    </head>
     <body>
-        <header id="main-header">
-            <nav>
-                <ul>
-                    <li>Engage</li> <!-- Logo -->
-                    <li><a href="index.php">Home</a></li>
-                    <?php if(isset($_SESSION['client'])): ?>
-                        <li><!-- Style it to the middle-->
-                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
-                                <?= username_cookie($db, $_SESSION['client'])  ?>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="logout.php">
-                                <button type="button">Sign out</button>
-                            </a>
-                        </li>
-                    <?php else: ?>
-                        <li>
-                            <a href="login.php">
-                                <button type="button">Sign In</button>
-                            </a> 
-                        </li>   
-                    <?php endif ?>
-                </ul>
-            </nav>
+        <header class="bg-dark text-white p-3">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <span class="navbar-brand">Engage</span>
+                    </div>
+                    <div class="col-md-8">
+                        <nav class="navbar navbar-expand-md justify-content-end">
+                            <ul class="navbar-nav">
+                                <li class="nav-item ms-3">
+                                    <a href="index.php" class="nav-link text-light">Home</a>
+                                </li>
+                                <?php if(isset($_SESSION['client'])): ?>
+                                    <li class="nav-item ms-3">
+                                        <p class="nav-link text-light">Hello, <?= username_cookie($db, $_SESSION['client']) ?>!</p>
+                                    </li>
+                                    <?php if(isset($_SESSION['isadmin'])): ?>
+                                        <li class="nav-item ms-3">
+                                            <a href="admin_cud_users.php" class="nav-link">
+                                                <button type="button" class="btn btn-warning">Moderate</button>
+                                            </a>
+                                        </li>
+                                    <?php endif ?>
+                                    <li class="nav-item ms-3">
+                                        <a href="logout.php" class="nav-link">
+                                            <button type="button" class="btn btn-danger">Sign out</button>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="nav-item ms-3">
+                                        <a href="login.php" class="nav-link">
+                                            <button type="button" class="btn btn-primary">Sign In</button>
+                                        </a>
+                                    </li>
+                                <?php endif ?>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
         </header>
         <div>
             <?php if(!empty($error)):?>
@@ -313,14 +340,6 @@
                         <?php endif ?>
                         <p> <!-- Posted By-->
                             <?php if(!empty($content['user_id'])): ?>
-                                <?php if(isset($_SESSION['isadmin'])): ?>
-                                    <a href="admin_cud_users.php?user_id=<?= $content['user_id']?>">
-                                        @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
-                                    </a>
-                                <?php else: ?>
-                                    @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
-                                <?php endif ?>
-                            <?php else: ?>
                                 @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
                             <?php endif ?>
                         </p>

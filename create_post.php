@@ -125,7 +125,7 @@
 
                             if(in_array(pathinfo($image_upload_path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png'])) {
                                 $resized_medium_image = file_upload_path($image_name, 'uploads_medium');
-                                $resized_thumbnail_image = file_upload_path($image_name, 'uploades_thumbnail');
+                                $resized_thumbnail_image = file_upload_path($image_name, 'uploads_thumbnail');
 
                                 try {
                                     $image = new ImageResize($image_upload_path);

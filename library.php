@@ -294,7 +294,39 @@
         return $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
     }
-    
+
+    /**
+     * Hashing and salting using password_hash().
+     * @param password The password to be hashed and salted.
+     * @return password The hashed password.
+     */
+    function hash_password($password) {
+        return password_hash($password, PASSWORD_DEFAULT);
+    }  
+
+    /**
+     * Verifies if user exists.
+     * @param db PHP Data Object to use to SQL queries.
+     * @return bool False if user doesn't exists, True if it does.
+     */
+    function verify_user_existence($db, $email) { // TODO TBT
+        if(user_or_admin($email)) { // true if admin
+            $query = "SELECT * FROM admins WHERE email = :email";
+
+        } else {
+            $query = "SELECT * FROM users WHERE email = :email";
+        }
+        
+        $statement = $db->prepare($query);
+        $statement->bindValue(':email', $email, PDO::PARAM_STR);
+        $statement->execute();
+        $result = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return(!empty($result));
+        
+    }
+
+
     /**
      * 
      * @param db
@@ -387,5 +419,5 @@
     }
 
 
-    
+
 ?>

@@ -1,75 +1,73 @@
 <?php 
+    
     /*******w******** 
         
         @author: Nigel Abrera
-        @date: 11/19/2023
-        @description: Registration
+        @date: 12/03/2023
+        @description: Editing the user's information
 
     ****************/
-    
     require("connect.php");
-    require('library.php');
+    require("library.php");
+    session_start();
+
+    
 
     /*
-    TODO: ADD LOGIC FOR INSERTING USERNAME.
-    
-
-
+        TODO: LOGIC USER GET TO USE THE USER_ID
     */
 
-    $error = [];
-    
+    if(isset($_SESSION['isadmin'])) {
+        $query = "SELECT * FROM users WHERE user_id = :user_id";
 
- 
+        $statement = $db->prepare($query);
+        $user_id = filter_var($_GET['user_id'], FILTER_VALIDATE_INT);
 
+        $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
 
-    if($_SERVER['REQUEST_METHOD'] == 'POST'){
-        // Filtration and Sanitization
-        $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
-        $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $confirm_password = filter_input(INPUT_POST,'confirm_password', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-        $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        $statement->execute();
+        $results = $statement->fetch();
 
-        if(empty($email) || empty($password) || empty($confirm_password) || empty($username)){
-            $error[] = "Invalid Empty Fields.";
+    } else {
+        header("Location: invalid_url.php");
+        exit();
+
+    }
+
+    if($_SERVER['REQUEST_METHOD'] === 'POST') {
         
-        } elseif($password != $confirm_password){
-            $error[] = "Password doesn not match!";
+        if($_POST && ($_POST['submit'] == 'update')) {
 
-        } else {
-            if(verify_user_existence($db, $email)) { // if it's true
-                $error[] = "User Exists.";
-                
-            } else {
-                // true if it's an admin
-                if(user_or_admin($email)){ // TODO add if username exists - non functional requirement.
-                    $query = "INSERT INTO admins(email, password, username) VALUES (:email, :password, :username)";
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
 
-                } else {
-                    $query = "INSERT INTO users(email, password, username) VALUES (:email, :password, :username)";
-                }
+            if(!empty($email) && !empty($username)) {
+                $query = "UPDATE users SET email = :email, username = :username WHERE user_id = :user_id";
 
                 $statement = $db->prepare($query);
-                $statement->bindValue(":email", $email, PDO::PARAM_STR);
-                $statement->bindValue(':password', hash_password($password));
+                $statement->bindValue(':email', $email, PDO::PARAM_STR);
                 $statement->bindValue(':username', $username, PDO::PARAM_STR);
-
+                $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
 
                 if($statement->execute()) {
-                    header("Location: login.php");
+                    header('Location: admin_cud_users.php');
                     exit();
                 }
+            } else {
+                $error[] = "Invalid empty fields!";
             }
         }
     }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="stylesheet" href="./bootstrap/css/bootstrap.css"/>
-        <title>Join Us!</title>
+        <link rel="stylesheet" href="./bootstrap/css/bootstrap.css">
+        <title>Edit user</title>
     </head>
     <body>
         <header class="bg-dark text-white p-3">
@@ -113,24 +111,16 @@
                 </div>
             </div>
         </header>
-        <main>
-            <div>
-                <form action="register.php" method="post">
-                    <fieldset>
-                        <legend>Creating New Profile</legend>
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" />
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="username" />
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" required />
-                        <label for="confirm_password">Re-type Password</label>
-                        <input type="password" id="confirm_password" name="confirm_password" requied/>
-                    </fieldset>
-                    <button type="submit">Register</button>
-                </form>
-            </div>
-        </main>
+        <div>
+            <form action="edit_user.php" method="post">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="<?= $results['email'] ?>"/>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" value="<?= $results['username'] ?>"/>
+                <input type="hidden" value="<?= $results['user_id']?>"/>
+                <input type="submit" name="submit" value="update" />
+            </form>
+        </div>
         <script src="./bootstrap/js/bootstrap.js"></script>
     </body>
 </html>
