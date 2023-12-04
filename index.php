@@ -20,29 +20,6 @@
 
         Dev notes: session_start(); carries over all the session.
 
-
-        
-    */
-
-    // Global
-    $error = [];
-
-
-    if(isset($_COOKIE['captcha_counter']) || isset($_SESSION['form_data'])) {
-        setcookie('captcha_counter', '', time());
-        unset($_SESSION['form_data']);
-    } 
-
-
-    // When the page loads.
-    $query = "SELECT * FROM contents LIMIT 30"; 
-
-    $statement = $db->prepare($query);
-    $statement->execute();
-    
-    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
-
-    /*
         CONTROL FLOW FOR LIST SORTATION
         LIST SORT BY TITLE, GENRE ( DONE ), CREATED DATE/ POSTED DATE
         USET GET
@@ -62,10 +39,14 @@
 
         Search for specific pages by keyword while limiting the search results to a specific category of pages.
         - Assumes page categories have been implemented as defined in feature 2.4.
+
         - This is not a search for categories. The user provided keywords are still used to search for pages. 
+
         - The search form includes a dropdown menu to restrict the search to pages from a specific category.
+
         - The provided category dropdown includes all page categories from feature 2.4, 
         along with the option to search all categories.
+
         - When "all categories" is selected search works as in 3.1, 
         otherwise search results only include pages from selected category.
 
@@ -78,12 +59,38 @@
 
         - Pagination links are only shown if there are greater than N search results. 
         - For testing purposes it should be easy to switch the value of N to a smaller or larger number.
+
+        
     */
+
+    // Global
+    $error = [];
+
+    // if($_SESSION['genre_holder'] == 'none') {
+    //     session_destroy($_SESSION['genre_holder']);
+    // }
+    // if(isset($_SESSION['date_sort'])): 
+
+    // For create page.
+    if(isset($_COOKIE['captcha_counter']) || isset($_SESSION['form_data'])) {
+        setcookie('captcha_counter', '', time());
+        unset($_SESSION['form_data']);
+
+    } 
+
+    // When the page loads.
+    $query = "SELECT * FROM contents LIMIT 30"; 
+
+    $statement = $db->prepare($query);
+    $statement->execute();
+    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+    
 
     // TODO TEST
     // If search is clicked. 
     if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
+        // Garbage
         if($_POST && !empty($_POST['Search'])){
             // Filtration and Sanitization.
             $user_query = filter_input(INPUT_POST, 'Search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
@@ -150,25 +157,140 @@
         }
     } 
 
-    // If Genre is change
-    if($_SERVER['REQUEST_METHOD'] == 'GET') {
-        
-        if(isset($_GET['sort_genre']) && ($_GET['sort_genre'] !== 'none')){
-            $genre = filter_var($_GET['sort_genre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    // Form submitted using GET
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        // Genre Sortation
+        if(isset($_GET['sort_genre'])) {
+            // Genre Sortation
+            if($_GET['sort_genre'] !== 'none') {
+                $genre = filter_var($_GET['sort_genre'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                $genre_id = retrieve_genres($db, $genre);
+    
+                if (!empty($genre_id)) {
+                    $query = "SELECT * FROM contents WHERE genre_id = :genre_id";
+    
+                    $statement = $db->prepare($query);
+                    $statement->bindValue(':genre_id', $genre_id[0]['genre_id'], PDO::PARAM_INT);
+                    $statement->execute();
+                    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+    
+                    // Set the session variable
+                    $_SESSION['genre_holder'] = $genre;
 
-            $query = "SELECT * FROM contents WHERE genre_id = :genre_id";
-            setcookie('genre_holder', $genre, time() + 60 * 60 * 24 * 2);
+                    if(isset($_SESSION['sort_title'])) {
+                        unset($_SESSION['sort_title']);
+    
+                    }
+                    
+                    if(isset($_SESSION['date_sort'])) {
+                        unset($_SESSION['date_sort']);
+    
+                    }
 
-            $genre_id = retrieve_genres($db, $genre);
+                } else {
+                    header("Location: invalid_url.php");
+                    exit();
+                    
+                }
+            } else {
+                // If "None" is selected, clear the session variable
+                unset($_SESSION['genre_holder']);
+                // Clear other session
+                if(isset($_SESSION['sort_title'])) {
+                    unset($_SESSION['sort_title']);
 
-            $statement = $db->prepare($query);
-            $statement->bindValue(':genre_id', $genre_id[0]['genre_id'], PDO::PARAM_INT);
-            $statement->execute();
-            $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+                }
+                
+                if(isset($_SESSION['date_sort'])) {
+                    unset($_SESSION['date_sort']);
 
-            // Set the session variable
-            $_SESSION['genre_holder'] = $genre;
+                }
+            }
+        // Title Sortation
+        } elseif(isset($_GET['sort_title'])) {
+            
+            if($_GET['sort_title'] !== 'none') {
+                $sort_title = filter_var($_GET['sort_title'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
 
+                if(!empty($sort_title)) {
+                    $query = "SELECT * FROM contents ORDER BY title $sort_title";
+
+                    $statement = $db->prepare($query);
+                    $statement->execute();
+                    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+                    $_SESSION['sort_title'] = $sort_title;
+
+                    if(isset($_SESSION['genre_holder'])) {
+                        unset($_SESSION['genre_holder']);
+    
+                    }
+    
+                    if(isset($_SESSION['date_sort'])) {
+                        unset($_SESSION['date_sort']);
+    
+                    }
+
+                } else {
+                    header("Location: invalid_url.php");
+                    exit();
+
+                }
+            } else {
+                unset($_SESSION['sort_title']);
+
+                if(isset($_SESSION['genre_holder'])) {
+                    unset($_SESSION['genre_holder']);
+
+                }
+
+                if(isset($_SESSION['date_sort'])) {
+                    unset($_SESSION['date_sort']);
+
+                }
+            }
+        // Created Date Sortation
+        } elseif(isset($_GET['date_sort'])){
+
+            if($_GET['date_sort'] !== 'none') {
+                $date_sort = filter_var($_GET['date_sort'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                
+                if(!empty($date_sort)) {
+                    $query = "SELECT * FROM contents ORDER BY date_posted $date_sort";
+
+                    $statement = $db->prepare($query);
+                    $statement->execute();
+                    $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+                    $_SESSION['date_sort'] = $date_sort;
+                    
+                    if(isset($_SESSION['genre_holder'])) {
+                        unset($_SESSION['genre_holder']);
+    
+                    }
+    
+                    if(isset($_SESSION['sort_title'])) {
+                        unset($_SESSION['sort_title']);
+    
+                    }
+
+                } else {
+                    header("Location: invalid_url.php");
+                    exit();
+                }
+            } else {
+                unset($_SESSION['date_sort']);
+
+                if(isset($_SESSION['genre_holder'])) {
+                    unset($_SESSION['genre_holder']);
+
+                }
+
+                if(isset($_SESSION['sort_title'])) {
+                    unset($_SESSION['sort_title']);
+
+                }
+            }
         }
     }
   
@@ -193,7 +315,7 @@
                         <nav class="navbar navbar-expand-md justify-content-end">
                             <ul class="navbar-nav">
                                 <li class="nav-item ms-3">
-                                    <a href="index.php" class="nav-link text-light">Home</a>
+                                    <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">Home</a>
                                 </li>
                                 <?php if(isset($_SESSION['client'])): ?>
                                     <li class="nav-item ms-3">
@@ -282,42 +404,58 @@
                     </select> -->
                 </form>
             </div>
-            <div>
-                <!-- Form Get for sort_date -->
-            </div>
-            <div>
-                <!-- Form Get for sort_title. -->
-            </div>
-            <div> <!-- Link for creating new post -->
-                <?php if(isset($_SESSION['client_id']) || isset($_SESSION['isadmin'])): ?>
+            <?php if(isset($_SESSION['client'])): ?>
+                <div><!-- Link for creating new post -->
                     <a href="create_post.php">
                         <button type="button">New Post +</button>
                     </a>
-                <?php endif ?>
-            </div>
-            <div> <!-- Drop Down for Categories -->
-                <form action="index.php" method="get">
-                    <label for="sort_genre">
-                        <select name="sort_genre" id="sort_genre" onchange="this.form.submit();"> 
-                            <option value="none">None</option>
-                            <?php $genres = retrieve_genres($db, null) ?>
-                            <?php foreach($genres as $genre_list): ?>
-                                <?php if(is_null($genre_list['genre_name'])): ?>
-                                    <h1>No Content Found!</h1>
-                                <?php else: ?>
-                                    <option value="<?= $genre_list['genre_name'] ?>"
-                                        <?php if(isset($_SESSION['genre_holder']) && $_SESSION['genre_holder'] == $genre_list['genre_name']): ?>
-                                            selected="selected"
-                                        <?php endif ?>> 
-                                        <?= ucfirst($genre_list['genre_name']) ?>
-                                    </option>
-                                <?php endif ?>
+                </div>
+                <div> <!-- Drop Down for Genres -->
+                    <?php $genres = retrieve_genres($db, null) ?>
+                    <form action="index.php" method="get">
+                        <label for="sort_genre">Genre</label>
+                        <select name="sort_genre" id="sort_genre" onchange="this.form.submit();">
+                            <option value="none" <?= (empty($_SESSION['genre_holder']) || ($_SESSION['genre_holder'] == 'none')) ? "selected" : '' ?>>
+                                None
+                            </option>
+                            <?php foreach ($genres as $genre_list): ?>
+                                <option value="<?= $genre_list['genre_name'] ?>" 
+                                    <?= (!empty($_SESSION['genre_holder']) && 
+                                    ($_SESSION['genre_holder'] == $genre_list['genre_name'])) ? 'selected' : '' ?>>
+                                    <?= ucfirst($genre_list['genre_name']) ?>
+                                </option>
                             <?php endforeach ?>
                         </select>
-                    </label>
-                </form>
-            </div>
-            <div><!-- Container in place holding the content -->
+                    </form>
+                </div>
+                <div> <!-- Title Sortation -->
+                    <form action="index.php" method="get">
+                        <label for="sort_title">Title </label>
+                        <select name="sort_title" id="sort_title" onchange="this.form.submit();">
+                            <option value="none" <?= (empty($_SESSION['sort_title']) || 
+                            ($_SESSION['sort_title'] == 'none')) ? "selected" : '' ?>>None</option>
+                            <option value="ASC" <?= (isset($_SESSION['sort_title']) && 
+                            ($_SESSION['sort_title'] == 'ASC')) ? "selected" : '' ?>>Ascending</option>
+                            <option value="DESC" <?= (isset($_SESSION['sort_title']) && 
+                            ($_SESSION['sort_title'] == 'DESC')) ? "selected" : '' ?>>Descending</option>
+                        </select>
+                    </form>
+                </div>
+                <div> <!-- Created Date Sortation -->
+                    <form action="index.php" method="get">
+                        <label for="date_sort">Created Date</label>
+                        <select name="date_sort" id="" onchange="this.form.submit();">
+                            <option value="none" <?= (empty($_SESSION['date_sort']) || 
+                            ($_SESSION['date_sort'] == 'none')) ? "selected" : '' ?>>None</option>
+                            <option value="ASC" <?= (isset($_SESSION['date_sort']) && 
+                            ($_SESSION['date_sort'] == 'ASC')) ? "selected" : '' ?>>Ascending</option>
+                            <option value="DESC" <?= (isset($_SESSION['date_sort']) && 
+                            ($_SESSION['date_sort'] == 'DESC')) ? "selected" : '' ?>>Descending</option>
+                        </select>
+                    </form>
+                </div>
+            <?php endif ?>
+            <div> <!-- Container in place holding the content -->
                 <?php foreach($results as $content): ?>
                     <div>
                         <a href="view_content.php?content_id=<?= $content['content_id'] ?>">
