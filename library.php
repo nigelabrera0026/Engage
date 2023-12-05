@@ -7,16 +7,12 @@
 
     ****************/
 
-    /*
-        TODO: BEFORE SUBMISSION CLEAN LIBRARY FOR UNUSED FUNCTIONS.
-    
-    */
-
+    // TODO DELETE UNUSED METHODS
 
     /**
      * Determines if the logged user is admin or not then will fetch a query.
-     * @param db
-     * @param email
+     * @param db PHP Data Object to use to SQL queries.
+     * @param email Email input to be used to get the username
      */
     function username_cookie($db, $email) {
         if(user_or_admin($email) && isset($_SESSION['isadmin'])) {
@@ -48,6 +44,11 @@
         }
     }
 
+    /**
+     * Checks if the input is an email or an username.
+     * @param email The input of the user to be checked.
+     * @return bool Returns true or false.
+     */
     function email_or_username($email) {
         $email = explode('@', $email);
 
@@ -165,34 +166,6 @@
         }
     }
 
-    /** NOT USED
-     * Retrieves id of the user.
-     * @param db PHP Data Object to use to SQL queries.
-     * @return result Fetched user or admin id from the database.
-     */
-    function retrieve_userID($db) { 
-        $user_type;
-
-        if(isset($_SESSION['isadmin'])) {
-            $query = "SELECT admin_id FROM admins WHERE email = :email";
-            $user_type = "admin";
-
-        } else {
-            $query = "SELECT user_id FROM users WHERE email = :email";
-            $user_type = "user";
-        }
-
-        // Sanitization, Preparation, Binding, Execution, and Retrieval
-        $email_sanitized = filter_var($_SESSION['client'], FILTER_SANITIZE_EMAIL);
-        $statement = $db->prepare($query);
-        $statement->bindValue(':email', $email_sanitized, PDO::PARAM_STR);
-        $statement->execute();
-        $result = $statement->fetch();
-
-        return $result[$user_type . '_id'];
-    }
-
-
     /**
      * Retrieves Title, to be used to verify its existence from users stuffs.
      * @param db PHP Data Object to use to SQL queries.
@@ -222,9 +195,6 @@
         } else {
             return false;
         }
-
-        // $result = $statement->fetch();
-        
     }
     
     /**
@@ -267,13 +237,11 @@
         return $file_extension_is_valid && $mime_type_is_valid;
     }
 
-
     /**
-     * 
-     * 
-     * @param db
-     * @param content_id
-     * @return results
+     * Retrieves all the comments from the Database.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param content_id The id associated with the comments.
+     * @return results The array of data fetched.
      */
     function retrieve_comments($db, $content_id) {
         $query = "SELECT * FROM comments WHERE content_id = :content_id ORDER BY date_posted DESC";
@@ -322,9 +290,9 @@
 
 
     /**
-     * 
-     * @param db
-     * @param content_id
+     *  NOT USED MIGHT DELETE BEFORE SUBMISSION
+     * @param db PHP Data Object to use to SQL queries.
+     * @param content_id The content 
      * @param title
      * @return bool
      */
@@ -332,21 +300,24 @@
         $query = "SELECT * FROM contents WHERE title = :title";
 
         $title = filter_var($title, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
         $statement = $db->prepare($query);
+
         $statement->bindValue(':title', $title, PDO::PARAM_STR);
+
         $statement->execute();
+        
         $results = $statement->fetch(PDO::FETCH_ASSOC);
 
         // Check if there are exactly two columns in the result
         if (!empty($results) && count($results) == 2) {
             return true;
+
         } else {
             return false;
+
         }
     }
-
-
-
 
     /**
      * Retrieving the genre name associated with the contents' ID.
@@ -382,9 +353,11 @@
     }
 
     /**
-     * 
-     * 
-     * 
+     * Retrieving the username of the user.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param user_id The user id of the user if it's not an admin.
+     * @param admin_id The user id of the user if it's an admin.
+     * @return result[username] The username of the user.
      */
     function get_username($db, $user_id, $admin_id) {
 
@@ -413,6 +386,12 @@
     }
 
 
+    /**
+     * Retrieving the user's id using the username.
+     * @param db PHP Data Object to use to SQL queries.
+     * @param username The username of the input.
+     * @return results[user_id] The user id associated to the username.
+     */
     function get_user_id($db, $username) {
         $query = "SELECT * FROM users WHERE username = :username";
 

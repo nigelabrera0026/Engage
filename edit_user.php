@@ -15,6 +15,7 @@
 
     /*
         TODO: LOGIC USER GET TO USE THE USER_ID
+        TODO: NOT FUCKING WORKING!
     */
 
     if(isset($_SESSION['isadmin'])) {
@@ -117,7 +118,7 @@
                 <input type="email" id="email" name="email" value="<?= $results['email'] ?>"/>
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" value="<?= $results['username'] ?>"/>
-                <input type="hidden" value="<?= $results['user_id']?>"/>
+                <input type="hidden" name="user_id" value="<?= $results['user_id']?>"/>
                 <input type="submit" name="submit" value="update" />
             </form>
         </div>

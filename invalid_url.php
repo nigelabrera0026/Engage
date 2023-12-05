@@ -1,22 +1,28 @@
 <?php  
 
-require("connect.php");
-require("library.php");
+    /*******w******** 
+        
+        @author: Nigel Abrera
+        @date: 11/8/2023
+        @description: Invalid URL
 
-session_start();
+    ****************/
+    
+    require("connect.php");
+    require("library.php");
 
-sleep(3);
+    session_start();
 
-if(isset($_SESSION['client'])) {
-    header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none");
+    sleep(3);
 
-} else {
-    header("Location: login.php");
+    if(isset($_SESSION['client'])) {
+        header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none");
 
-}
+    } else {
+        header("Location: login.php");
 
-
-?>
+    }
+    ?>
 <!DOCTYPE html>
 <html lang="en">
     <head>

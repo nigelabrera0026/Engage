@@ -10,12 +10,6 @@
     require("library.php");
     session_start();
 
-
-    /*
-        TODO USE BOOTSTRAP FOR CSS PENDING
-        TODO FIXME search algorithm TESTING
-    */
-
     // Global
     $error = [];
 
@@ -25,8 +19,6 @@
         unset($_SESSION['form_data']);
 
     } 
-
-    
 
     // When the page loads.
     $query = "SELECT * FROM contents LIMIT 30"; 
@@ -69,6 +61,7 @@
 
             }
 
+            // Query to be executed.
             $query = "SELECT * FROM contents WHERE (title LIKE :title) OR (artist LIKE :artist)";
 
             // Appending values if true
@@ -112,8 +105,8 @@
                 }
             }
 
+            // Execute and fetch data, verify if there's content in it.
             $statement->execute();
-            
             $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
             if(empty($results)) {
@@ -122,6 +115,8 @@
             }
         } else {
             $error[] = "Invalid empty fields!";
+
+            // Unset Sessions
             unset($_SESSION['genre_search']);
             unset($_SESSION['search_query']);
         }
@@ -147,6 +142,7 @@
                     // Set the session variable
                     $_SESSION['genre_holder'] = $genre;
 
+                    // Unset Sessions
                     $sessions = ['sort_title', 'date_sort'];
 
                     foreach($sessions as $sesh){
@@ -163,6 +159,7 @@
             } else {
                 // If "None" is selected, clear the session variable
                 unset($_SESSION['genre_holder']);
+
                 // Clear other session
                 $sessions = ['sort_title', 'date_sort'];
 
@@ -188,6 +185,7 @@
 
                     $_SESSION['sort_title'] = $sort_title;
 
+                    // Unset Sessions
                     $sessions = ['date_sort', 'genre_holder'];
 
                     foreach($sessions as $sesh){
@@ -224,18 +222,10 @@
                     $statement->execute();
                     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
+
                     $_SESSION['date_sort'] = $date_sort;
 
-                    if(isset($_SESSION['genre_holder'])) {
-                        unset($_SESSION['genre_holder']);
-    
-                    }
-    
-                    if(isset($_SESSION['sort_title'])) {
-                        unset($_SESSION['sort_title']);
-    
-                    }
-
+                    // Unset Sessions
                     $sessions = ['sort_title', 'genre_holder'];
 
                     foreach($sessions as $sesh){
@@ -260,8 +250,6 @@
             }
         }
     }
-  
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
