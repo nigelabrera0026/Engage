@@ -29,28 +29,30 @@
         if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if($_POST && $_POST['submit'] == 'Update') {
-
-                $comments = filter_input(INPUT_POST, 'comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-                $admin_id = filter_var($_SESSION['client_id'], FILTER_VALIDATE_INT);
                 $content_id = filter_var($_POST['content_id'], FILTER_VALIDATE_INT);
-                
                 $comment_id = filter_var($_POST['comment_id'], FILTER_VALIDATE_INT);
+                
+                if(empty($_POST['comment'])) {
+                    $error[] = "Invalid empty field, cannot update.";
+                    
+                } else { 
+                    $comments = filter_input(INPUT_POST, 'comment', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                    $admin_id = filter_var($_SESSION['client_id'], FILTER_VALIDATE_INT);
 
+                    $query = "UPDATE comments 
+                    SET comments_text = :comments_text, admin_id = :admin_id
+                    WHERE comment_id = :comment_id";
 
-                $query = "UPDATE comments 
-                          SET comments_text = :comments_text, admin_id = :admin_id
-                          WHERE comment_id = :comment_id";
+                    $statement = $db->prepare($query);
+                    $statement->bindValue(':comments_text', $comments, PDO::PARAM_STR);
+                    $statement->bindValue(':admin_id', $admin_id, PDO::PARAM_INT);
+                    $statement->bindValue(':comment_id', $comment_id, PDO::PARAM_INT);
 
-                $statement = $db->prepare($query);
-                $statement->bindValue(':comments_text', $comments, PDO::PARAM_STR);
-                $statement->bindValue(':admin_id', $admin_id, PDO::PARAM_INT);
-                $statement->bindValue(':comment_id', $comment_id, PDO::PARAM_INT);
-
-                if($statement->execute()) {
-                    header('Location: view_content.php?content_id=' . $content_id);
-                    exit();
+                    if($statement->execute()) {
+                        header('Location: view_content.php?content_id=' . $content_id);
+                        exit();
+                    }
                 }
-
             } elseif($_POST && $_POST['submit'] == 'Delete') {
                 $query = "DELETE FROM comments WHERE comment_id = :comment_id";
 
@@ -63,15 +65,13 @@
                     header('Location: view_content.php?content_id=' . $content_id);
                     exit();
                 }
-
             }
         }
     } else {
         header("Location: invalid_url.php");
         exit();
+
     }
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -128,6 +128,18 @@
                     </div>
                 </div>
             </header>
+            <div class="container mt-3">
+                <?php if (!empty($error)): ?>
+                    <div class="alert alert-danger">
+                        <h1>Error(s):</h1>
+                        <ul>
+                            <?php foreach ($error as $message): ?>
+                                <li><?= $message ?></li>
+                            <?php endforeach ?>
+                        </ul>
+                    </div>
+                <?php endif ?>
+            </div>
             <div class="container-fluid">
                 <form action="edit_comment.php?comment_id=<?= $result['comment_id']?>" method="post">
                     <?php if(empty($result['username'])): ?>
@@ -150,7 +162,10 @@
                     <input type="submit" name="submit" value="Delete"/>
                 </form>
             </div>
-            <?php include("footer.php"); ?>
+            <footer class="bg-dark text-white text-center py-2">
+                <p>Created by Nigel Abrera</p>
+            </footer>
+            <script src="./bootstrap/js/bootstrap.js"></script>
         </div>
     </body>
 </html>

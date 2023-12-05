@@ -113,6 +113,18 @@
                 </div>
             </div>
         </header>
+        <div class="container mt-3">
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-danger">
+                    <h1>Error(s):</h1>
+                    <ul>
+                        <?php foreach ($error as $message): ?>
+                            <li><?= $message ?></li>
+                        <?php endforeach ?>
+                    </ul>
+                </div>
+            <?php endif ?>
+        </div>
         <main>
             <div>
                 <form action="register.php" method="post">

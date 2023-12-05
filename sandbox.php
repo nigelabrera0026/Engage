@@ -96,13 +96,3 @@
         </form>
     </body>
 </html>
-
-<!-- <div>
-            <form method="post" action="#">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" />
-                <label type="pwd">Password</label>
-                <input type="password" id="pwd" name="pwd" required/>
-                <button type="submit" id="login_submit">Sign In</button>
-            </form>
-        </div> -->

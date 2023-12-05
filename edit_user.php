@@ -11,12 +11,7 @@
     require("library.php");
     session_start();
 
-    
-
-    /*
-        TODO: LOGIC USER GET TO USE THE USER_ID
-        TODO: NOT FUCKING WORKING!
-    */
+    $error = []; 
 
     if(isset($_SESSION['isadmin'])) {
         $query = "SELECT * FROM users WHERE user_id = :user_id";
@@ -39,11 +34,10 @@
         
         if($_POST && ($_POST['submit'] == 'update')) {
 
-            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
-
-            if(!empty($email) && !empty($username)) {
+            if(!empty($_POST['email']) && !empty($_POST['username'])) {
+                $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
                 $query = "UPDATE users SET email = :email, username = :username WHERE user_id = :user_id";
 
                 $statement = $db->prepare($query);
@@ -54,7 +48,8 @@
                 if($statement->execute()) {
                     header('Location: admin_cud_users.php');
                     exit();
-                }
+                
+                } 
             } else {
                 $error[] = "Invalid empty fields!";
             }
@@ -112,8 +107,20 @@
                 </div>
             </div>
         </header>
+        <div> <!-- Error Message Display. -->
+            <?php if(!empty($error)):?>
+                <div>
+                    <h1>Error(s):</h1>
+                    <ul>
+                        <?php foreach($error as $message): ?>
+                            <li><?= $message ?></li>
+                        <?php endforeach ?>
+                    </ul>
+                </div>
+            <?php endif ?>
+        </div>
         <div>
-            <form action="edit_user.php" method="post">
+            <form action="edit_user.php?user_id=<?= $results['user_id']?>" method="post">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" value="<?= $results['email'] ?>"/>
                 <label for="username">Username</label>
@@ -122,6 +129,7 @@
                 <input type="submit" name="submit" value="update" />
             </form>
         </div>
+        <?php include('footer.php') ?>
         <script src="./bootstrap/js/bootstrap.js"></script>
     </body>
 </html>

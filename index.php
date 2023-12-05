@@ -274,13 +274,13 @@
                                         Home
                                     </a>
                                 </li>
-                                <?php if(isset($_SESSION['client'])): ?>
+                                <?php if (isset($_SESSION['client'])): ?>
                                     <li class="nav-item ms-3">
                                         <p class="nav-link text-light">
                                             Hello, <?= username_cookie($db, $_SESSION['client']) ?>!
                                         </p>
                                     </li>
-                                    <?php if(isset($_SESSION['isadmin'])): ?>
+                                    <?php if (isset($_SESSION['isadmin'])): ?>
                                         <li class="nav-item ms-3">
                                             <a href="admin_cud_users.php" class="nav-link">
                                                 <button type="button" class="btn btn-warning">Moderate</button>
@@ -305,21 +305,23 @@
                 </div>
             </div>
         </header>
-        <div> <!-- Error Message Display. -->
-            <?php if(!empty($error)):?>
-                <div>
+        <div class="container mt-3">
+            <?php if (!empty($error)): ?>
+                <div class="alert alert-danger">
                     <h1>Error(s):</h1>
                     <ul>
-                        <?php foreach($error as $message): ?>
+                        <?php foreach ($error as $message): ?>
                             <li><?= $message ?></li>
                         <?php endforeach ?>
                     </ul>
                 </div>
             <?php endif ?>
         </div>
-        <main>
-            <div> <!-- Search -->
-                <form action="index.php" method="post">
+        <main class="container mt-3">
+            <div class="row">
+                <!-- Search -->
+                <div class="col-md-6">
+                    <form action="index.php" method="post" class="form-inline">
                     <label for="search"><!-- probably a logo --></label>
                     <input type="text" name="search" id="search" 
                     value="<?=(isset($_SESSION['search_query'])) ? $_SESSION['search_query'] : '' ?>"/>
@@ -351,12 +353,14 @@
                 </form>        
             </div>
             <?php if(isset($_SESSION['client'])): ?>
-                <div><!-- Link for creating new post -->
+                <div class="col-md-6 text-right"><!-- Link for creating new post -->
                     <a href="create_post.php">
                         <button type="button">New Post +</button>
                     </a>
                 </div>
+                <br><br>
                 <div> <!-- Drop Down for Genres -->
+                    <p>Sort the contents below.</p>
                     <form action="index.php" method="get">
                         <!-- Generate genre-->
                         <?php $genres = retrieve_genres($db, null) ?>
@@ -403,11 +407,15 @@
                 </div>
             <?php endif ?>
             <?php if(isset($no_content) && !empty($no_content)): ?>
-                <div><h1>No Content Available.</h1></div>
+                <div class="col-12">
+                    <h1>
+                        No Content Available.
+                    </h1>
+                </div>
             <?php else: ?>
                 <div> <!-- Container in place holding the content -->
                     <?php foreach($results as $content): ?>
-                        <div>
+                        <div class="col-md-4 mb-4">
                             <a href="view_content.php?content_id=<?= $content['content_id'] ?>">
                                 <button type="button">View Full Post</button>
                             </a>
@@ -438,6 +446,9 @@
                 </div>
             <?php endif ?>
         </main>
-        <?php include("footer.php") ?>
+        <footer class="bg-dark text-white text-center py-2">
+            <p>Created by Nigel Abrera</p>
+        </footer>
+        <script src="./bootstrap/js/bootstrap.js"></script>
     </body>
 </html>

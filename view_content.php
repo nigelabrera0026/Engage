@@ -82,6 +82,7 @@
 
                     if(empty($captcha)) {
                         $error[] = "Captcha is required!";
+                        header("Location: view_content.php?content_id=$content_id");
 
                     } elseif($captcha === $_SESSION['captcha']) {
                         // ready to be executed
@@ -154,11 +155,14 @@
 
                     } else {
                         $error[] = "Execution failed!";
+                        header("Location: view_content.php?content_id=$content_id");
                     }
 
                 }
             } else {
                 $error[] = "Invalid empty field!";
+                header("Location: view_content.php?content_id=$content_id");
+
             }
         }
     }
@@ -268,18 +272,14 @@
                             <?php else: ?>
                                 <label for="username">Username</label>
                                 <?php if(!empty($form_data['form_username'])): ?>
-                                    <input type="text" name="username" id="username" value="
-                                    <?= htmlspecialchars($form_data['form_username']) ?>"
-                                    />
+                                    <input type="text" name="username" id="username" value="<?=htmlspecialchars($form_data['form_username'])?>"/>
                                 <?php else: ?>
                                     <input type="text" name="username" id="username" />
                                 <?php endif ?>
                                 <label for="captcha">Enter the letters below to prove you are human.</label>
                                 <img src="captcha.php?rand=<?= rand() ?>" id="captcha_image" alt="CAPTCHA IMAGE" />
                                 <?php if(!empty($form_data['user_captcha'])): ?>
-                                    <input type="text" name="captcha" id="captcha" value="
-                                    <?= htmlspecialchars($form_data['user_captcha']) ?>"
-                                    />
+                                    <input type="text" name="captcha" id="captcha" value="<?=htmlspecialchars($form_data['user_captcha'])?>"/>
                                 <?php else: ?>
                                     <input type="text" name="captcha" id="captcha"/>
                                 <?php endif ?>
@@ -292,7 +292,7 @@
                             <?php endif ?>
                             <label for="comment">Comment: </label>
                             <?php if(!empty($form_data['comment'])): ?>
-                                <textarea name="comment" id="comment"><?= htmlspecialchars($form_data['comment'])?></textarea>
+                                <textarea name="comment" id="comment"><?=htmlspecialchars($form_data['comment'])?></textarea>
                             <?php else: ?>
                                 <textarea name="comment" id="comment"></textarea>
                             <?php endif ?>
@@ -339,7 +339,9 @@
                 </div>
             <?php endforeach ?>
         </div>
-        <?php include("footer.php"); ?>
+        <footer class="bg-dark text-white text-center py-2">
+            <p>Created by Nigel Abrera</p>
+        </footer>
         <script src="./bootstrap/js/bootstrap.js"></script>
     </body>
 </html>
