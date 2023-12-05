@@ -60,12 +60,6 @@
         }
     }
 
-    function check_username($db, $username) {
-
-
-    }
-
-
     /**
      * Slicing the email and checking if it's admin or not.
      * @param email retrieves the email to be sliced.
@@ -419,5 +413,23 @@
     }
 
 
+    function get_user_id($db, $username) {
+        $query = "SELECT * FROM users WHERE username = :username";
+
+        $username = filter_var($username, FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+        $statement = $db->prepare($query); 
+        $statement->bindValue(':username', $username, PDO::PARAM_STR);
+        $statement->execute();
+        $results = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if(!empty($results)) {
+            return $results['user_id'];
+
+        } else {
+            return null;
+            
+        }
+    }
 
 ?>

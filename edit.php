@@ -211,7 +211,7 @@
 
                     // Execution
                     if($statement->execute()) {
-                        header("Location: index.php");
+                        header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none");
                         exit();
 
                     } else {
@@ -230,7 +230,7 @@
                 
                 if($statement->execute()) {
                     // Check if change is needed to user_profile.php
-                    header("Location: index.php");
+                    header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none");
                     exit();
 
                 }
@@ -253,31 +253,50 @@
     </head>
     <body>
         <!-- Template for Data to be created -->
-        <header>
-            <nav>
-                <ul>
-                    <li>Engage</li> <!-- Logo -->
-                    <li><a href="index.php">Home</a></li>
-                    <?php if(isset($_SESSION['client'])): ?>
-                        <li><!-- Style it to the middle-->
-                            <a href="user_stuff.php?user_id=<?= $_SESSION['client_id'] ?>">
-                                <?= username_cookie($db, $_SESSION['client'])  ?>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="logout.php">
-                                <button type="button">Sign out</button>
-                            </a>
-                        </li>
-                    <?php else: ?>
-                        <li>
-                            <a href="login.php">
-                                <button type="button">Sign In</button>
-                            </a> 
-                        </li>   
-                    <?php endif ?>
-                </ul>
-            </nav>
+        <header class="bg-dark text-white p-3">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <span class="navbar-brand">Engage</span>
+                    </div>
+                    <div class="col-md-8">
+                        <nav class="navbar navbar-expand-md justify-content-end">
+                            <ul class="navbar-nav">
+                                <li class="nav-item ms-3">
+                                    <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">
+                                        Home
+                                    </a>
+                                </li>
+                                <?php if(isset($_SESSION['client'])): ?>
+                                    <li class="nav-item ms-3">
+                                        <p class="nav-link text-light">
+                                            Hello, <?= username_cookie($db, $_SESSION['client']) ?>!
+                                        </p>
+                                    </li>
+                                    <?php if(isset($_SESSION['isadmin'])): ?>
+                                        <li class="nav-item ms-3">
+                                            <a href="admin_cud_users.php" class="nav-link">
+                                                <button type="button" class="btn btn-warning">Moderate</button>
+                                            </a>
+                                        </li>
+                                    <?php endif ?>
+                                    <li class="nav-item ms-3">
+                                        <a href="logout.php" class="nav-link">
+                                            <button type="button" class="btn btn-danger">Sign out</button>
+                                        </a>
+                                    </li>
+                                <?php else: ?>
+                                    <li class="nav-item ms-3">
+                                        <a href="login.php" class="nav-link">
+                                            <button type="button" class="btn btn-primary">Sign In</button>
+                                        </a>
+                                    </li>
+                                <?php endif ?>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
         </header>
         <main>
             <!-- Structure for creating new stuff. -->

@@ -8,7 +8,7 @@ session_start();
 sleep(3);
 
 if(isset($_SESSION['client'])) {
-    header("Location: index.php");
+    header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none");
 
 } else {
     header("Location: login.php");

@@ -91,9 +91,9 @@
                         if(isset($_COOKIE['captcha_counter'])){
                             
                             if($_COOKIE['captcha_counter'] == 3) {
-                                
                                 unset($_SESSION['form_data']);
                                 unset($_COOKIE['captcha_counter']);
+
                                 header("Location: index.php");
                                 exit();
 
@@ -137,7 +137,7 @@
                 
                 // Preparation
                 $statement = $db->prepare($query);
-
+                
                 // Binding
                 foreach($values as $param => $value) {
                     $statement->bindValue($param, $value);
@@ -198,7 +198,7 @@
                         <nav class="navbar navbar-expand-md justify-content-end">
                             <ul class="navbar-nav">
                                 <li class="nav-item ms-3">
-                                    <a href="index.php" class="nav-link text-light">Home</a>
+                                    <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">Home</a>
                                 </li>
                                 <?php if(isset($_SESSION['client'])): ?>
                                     <li class="nav-item ms-3">
@@ -248,6 +248,7 @@
                         alt="<?= $content['image_name'] ?>"/>
                     <?php endif ?>
                     <h3><?= $content['title'] ?></h3>
+                    <h4><?= $content['artist'] ?></h4>
                     <?php if(isset($content['song_file'])): ?>
                         <audio controls>
                             <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>

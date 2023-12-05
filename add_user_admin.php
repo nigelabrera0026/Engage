@@ -74,7 +74,7 @@
                         <nav class="navbar navbar-expand-md justify-content-end">
                             <ul class="navbar-nav">
                                 <li class="nav-item ms-3">
-                                    <a href="index.php" class="nav-link text-light">Home</a>
+                                    <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">Home</a>
                                 </li>
                                 <?php if(isset($_SESSION['client'])): ?>
                                     <li class="nav-item ms-3">

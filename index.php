@@ -10,66 +10,14 @@
     require("library.php");
     session_start();
 
-    
-
 
     /*
-        TODO ADMIN CRUD PRIV FOR USERS !!!! CREATE A MODERATE BUTTON IF ADMIN EXISTS
         TODO USE BOOTSTRAP FOR CSS PENDING
-        TODO FIXME search algorithm and, title, date sortation. PENDING
-
-        Dev notes: session_start(); carries over all the session.
-
-        CONTROL FLOW FOR LIST SORTATION
-        LIST SORT BY TITLE, GENRE ( DONE ), CREATED DATE/ POSTED DATE
-        USET GET
-
-        CONTROL FLOW FOR SEARCH - ALL PAGES (PROBABLY SEPARATE THE REQUEST METHOD POST TO ANOTHER FILE SO IT COULD BE DYNAMIC?)
-
-        Search for specific pages by keyword using a search form.
-        - A search form is available at the top of all pages.
-
-        - The keyword or keywords entered into the search form will 
-        be used to search for pages that include the provided word or phrase.
-
-        - At a minimum the page name will be searched using a SQL LIKE query with wildcards, 
-        but other page properties can also be searched.
-
-        - The search will result in a list of links to all found pages.
-
-        Search for specific pages by keyword while limiting the search results to a specific category of pages.
-        - Assumes page categories have been implemented as defined in feature 2.4.
-
-        - This is not a search for categories. The user provided keywords are still used to search for pages. 
-
-        - The search form includes a dropdown menu to restrict the search to pages from a specific category.
-
-        - The provided category dropdown includes all page categories from feature 2.4, 
-        along with the option to search all categories.
-
-        - When "all categories" is selected search works as in 3.1, 
-        otherwise search results only include pages from selected category.
-
-        Search results are paginated. (probably not? will check, we need to implement bootstrap soon)
-        - Pagination is the process of dividing up your search results 
-        into discrete pages. Each of your result pages should include at most N search results.
-
-        - Below each page of search results is a set of links to all available pages, 
-        along with previous page and next page links (if applicable).
-
-        - Pagination links are only shown if there are greater than N search results. 
-        - For testing purposes it should be easy to switch the value of N to a smaller or larger number.
-
-        
+        TODO FIXME search algorithm TESTING
     */
 
     // Global
     $error = [];
-
-    // if($_SESSION['genre_holder'] == 'none') {
-    //     session_destroy($_SESSION['genre_holder']);
-    // }
-    // if(isset($_SESSION['date_sort'])): 
 
     // For create page.
     if(isset($_COOKIE['captcha_counter']) || isset($_SESSION['form_data'])) {
@@ -78,6 +26,8 @@
 
     } 
 
+    
+
     // When the page loads.
     $query = "SELECT * FROM contents LIMIT 30"; 
 
@@ -85,75 +35,95 @@
     $statement->execute();
     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
     
-
-    // TODO TEST
-    // If search is clicked. 
+    // Form submitted using POST
     if($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-        // Garbage
-        if($_POST && !empty($_POST['Search'])){
-            // Filtration and Sanitization.
-            $user_query = filter_input(INPUT_POST, 'Search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $sort_title = filter_input(INPUT_POST, 'sort_title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $sort_date = filter_input(INPUT_POST, 'sort_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+        if(isset($_POST['submit_search']) && !empty($_POST['search'])) {
+            // Initialize var to be processed
+            $user_search = filter_input(INPUT_POST, 'search', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+            $user_query;
+            $user_set = false;
 
-            // Init
-            $query;
-            $statement;
+            // Sets the session to maintain searched query when page loads.
+            $_SESSION['search_query'] = $user_search;
 
-            if(!empty($sort_title) && !empty($sort_date)) {
-                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY title $sort_title, date_posted $sort_date LIMIT 30";
-                $statement = $db->prepare($query);
+            // Checks if search input is about username of the authors.
+            if(!empty(get_user_id($db, $user_search))) {
+                $user_query = " OR (user_id = :user_id) ";
+                $user_set = true;
+            }
+            
+            $genre_query;
+            $genre_set = false;
+            // Verifies if input for genre is not == 'none'
+            if(is_numeric($_POST['genre_search'])) {
+                // Will append to the query
+                $genre_query = " AND (genre_id = :genre_id) ";
 
-            } elseif(!empty($_POST['sort_title']) && isset($_POST['sort_title'])) {
-                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY title $sort_title LIMIT 30";
-                $statement = $db->prepare($query);
-                
-            } elseif (!empty($_POST['sort_date']) && isset($_POST['sort_title'])) {
-                $query = "SELECT * FROM contents WHERE title LIKE :title ORDER BY date_posted $sort_date LIMIT 30";
-                $statement = $db->prepare($query);
+                // Trigger for query
+                $genre_set = true;
 
             } else {
-                // echo "It passed here";
-                $query = "SELECT * FROM contents WHERE title LIKE :title";
-                $statement = $db->prepare($query);
+                // Set session 
+                $_SESSION['genre_search'] = 'none';
 
             }
-            $user_query = '%' . $user_query . '%';
-            echo $query;
-            $statement->bindValue(':title', $user_query, PDO::PARAM_STR);
+
+            $query = "SELECT * FROM contents WHERE (title LIKE :title) OR (artist LIKE :artist)";
+
+            // Appending values if true
+            if($user_set) {
+                $query .= $user_query;
+            
+            }
+            
+            if($genre_set) {
+                $query .= $genre_query;
+
+            } 
+
+            // Preparation and Binding
+            $statement = $db->prepare($query);
+            $statement->bindValue(':title', '%' . $user_search . '%', PDO::PARAM_STR);
+            $statement->bindValue(':artist', '%' . $user_search . '%', PDO::PARAM_STR);
+            
+            // Binding if true
+            if($user_set) {
+                $user_id = get_user_id($db, $user_search);
+                $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+            }
+            
+            if($genre_set) {
+                $genre_search = filter_input(INPUT_POST, 'genre_search', FILTER_VALIDATE_INT);
+
+                // Set session for dropdown
+                $_SESSION['genre_search'] = $genre_search;
+                $statement->bindValue(':genre_id', $genre_search, PDO::PARAM_INT);
+
+            }
+
+            // Unset Sessions
+            $sessions = ['sort_title', 'date_sort', 'genre_holder'];
+
+            foreach($sessions as $sesh){
+                if(isset($_SESSION[$sesh])) {
+                    unset($_SESSION[$sesh]);
+                }
+            }
+
             $statement->execute();
+            
             $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
+            if(empty($results)) {
+                $no_content = "No Content Available";
+
+            }
         } else {
-            // Do the common query which is this $query = "SELECT * FROM contents LIMIT 30"; 
-            $sort_title = filter_input(INPUT_POST, 'sort_title', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-            $sort_date = filter_input(INPUT_POST, 'sort_date', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-
-            // Init
-            $query;
-            $statement;
-
-            if(!empty($sort_title) && !empty($sort_date)) {
-                $query = "SELECT * FROM contents ORDER BY title $sort_title, date_posted $sort_date LIMIT 30";
-                $statement = $db->prepare($query);
-
-            } elseif(!empty($_POST['sort_title']) && isset($_POST['sort_title'])) {
-                $query = "SELECT * FROM contents ORDER BY title $sort_title LIMIT 30";
-                $statement = $db->prepare($query);
-                
-            } elseif (!empty($_POST['sort_date']) && isset($_POST['sort_title'])) {
-                $query = "SELECT * FROM contents ORDER BY date_posted $sort_date LIMIT 30";
-                $statement = $db->prepare($query);
-
-            } else {
-                $query = "SELECT * FROM contents";
-                $statement = $db->prepare($query);
-
-            }
-
-            $statement->execute();
-            $results = $statement->fetchAll(PDO::FETCH_ASSOC);
+            $error[] = "Invalid empty fields!";
+            unset($_SESSION['genre_search']);
+            unset($_SESSION['search_query']);
         }
     } 
 
@@ -177,14 +147,12 @@
                     // Set the session variable
                     $_SESSION['genre_holder'] = $genre;
 
-                    if(isset($_SESSION['sort_title'])) {
-                        unset($_SESSION['sort_title']);
-    
-                    }
-                    
-                    if(isset($_SESSION['date_sort'])) {
-                        unset($_SESSION['date_sort']);
-    
+                    $sessions = ['sort_title', 'date_sort'];
+
+                    foreach($sessions as $sesh){
+                        if(isset($_SESSION[$sesh])) {
+                            unset($_SESSION[$sesh]);
+                        }
                     }
 
                 } else {
@@ -196,14 +164,12 @@
                 // If "None" is selected, clear the session variable
                 unset($_SESSION['genre_holder']);
                 // Clear other session
-                if(isset($_SESSION['sort_title'])) {
-                    unset($_SESSION['sort_title']);
+                $sessions = ['sort_title', 'date_sort'];
 
-                }
-                
-                if(isset($_SESSION['date_sort'])) {
-                    unset($_SESSION['date_sort']);
-
+                foreach($sessions as $sesh){
+                    if(isset($_SESSION[$sesh])) {
+                        unset($_SESSION[$sesh]);
+                    }
                 }
             }
         // Title Sortation
@@ -215,20 +181,19 @@
                 if(!empty($sort_title)) {
                     $query = "SELECT * FROM contents ORDER BY title $sort_title";
 
+                    // Prepare, Execute, Fetch
                     $statement = $db->prepare($query);
                     $statement->execute();
                     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
                     $_SESSION['sort_title'] = $sort_title;
 
-                    if(isset($_SESSION['genre_holder'])) {
-                        unset($_SESSION['genre_holder']);
-    
-                    }
-    
-                    if(isset($_SESSION['date_sort'])) {
-                        unset($_SESSION['date_sort']);
-    
+                    $sessions = ['date_sort', 'genre_holder'];
+
+                    foreach($sessions as $sesh){
+                        if(isset($_SESSION[$sesh])) {
+                            unset($_SESSION[$sesh]);
+                        }
                     }
 
                 } else {
@@ -238,15 +203,12 @@
                 }
             } else {
                 unset($_SESSION['sort_title']);
+                $sessions = ['date_sort', 'genre_holder'];
 
-                if(isset($_SESSION['genre_holder'])) {
-                    unset($_SESSION['genre_holder']);
-
-                }
-
-                if(isset($_SESSION['date_sort'])) {
-                    unset($_SESSION['date_sort']);
-
+                foreach($sessions as $sesh){
+                    if(isset($_SESSION[$sesh])) {
+                        unset($_SESSION[$sesh]);
+                    }
                 }
             }
         // Created Date Sortation
@@ -263,7 +225,7 @@
                     $results = $statement->fetchAll(PDO::FETCH_ASSOC);
 
                     $_SESSION['date_sort'] = $date_sort;
-                    
+
                     if(isset($_SESSION['genre_holder'])) {
                         unset($_SESSION['genre_holder']);
     
@@ -274,21 +236,26 @@
     
                     }
 
+                    $sessions = ['sort_title', 'genre_holder'];
+
+                    foreach($sessions as $sesh){
+                        if(isset($_SESSION[$sesh])) {
+                            unset($_SESSION[$sesh]);
+                        }
+                    }
+
                 } else {
                     header("Location: invalid_url.php");
                     exit();
                 }
             } else {
                 unset($_SESSION['date_sort']);
+                $sessions = ['sort_title', 'genre_holder'];
 
-                if(isset($_SESSION['genre_holder'])) {
-                    unset($_SESSION['genre_holder']);
-
-                }
-
-                if(isset($_SESSION['sort_title'])) {
-                    unset($_SESSION['sort_title']);
-
+                foreach($sessions as $sesh){
+                    if(isset($_SESSION[$sesh])) {
+                        unset($_SESSION[$sesh]);
+                    }
                 }
             }
         }
@@ -315,11 +282,15 @@
                         <nav class="navbar navbar-expand-md justify-content-end">
                             <ul class="navbar-nav">
                                 <li class="nav-item ms-3">
-                                    <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">Home</a>
+                                    <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">
+                                        Home
+                                    </a>
                                 </li>
                                 <?php if(isset($_SESSION['client'])): ?>
                                     <li class="nav-item ms-3">
-                                        <p class="nav-link text-light">Hello, <?= username_cookie($db, $_SESSION['client']) ?>!</p>
+                                        <p class="nav-link text-light">
+                                            Hello, <?= username_cookie($db, $_SESSION['client']) ?>!
+                                        </p>
                                     </li>
                                     <?php if(isset($_SESSION['isadmin'])): ?>
                                         <li class="nav-item ms-3">
@@ -346,7 +317,7 @@
                 </div>
             </div>
         </header>
-        <div>
+        <div> <!-- Error Message Display. -->
             <?php if(!empty($error)):?>
                 <div>
                     <h1>Error(s):</h1>
@@ -359,50 +330,37 @@
             <?php endif ?>
         </div>
         <main>
-            <div> <!-- search form -->
-                <!-- <form action="index.php" method="post">
-                    <label for="search">Search</label>
-                    <input type="text" name="search" id="search">
-
-                    <label for="sort_type">Sort By:</label>
-                    <select name="sort_type" id="sort_type">
-                        <option value="date">Date</option>
-                        <option value="title">Title</option>
+            <div> <!-- Search -->
+                <form action="index.php" method="post">
+                    <label for="search"><!-- probably a logo --></label>
+                    <input type="text" name="search" id="search" 
+                    value="<?=(isset($_SESSION['search_query'])) ? $_SESSION['search_query'] : '' ?>"/>
+                    <!-- Unset session right away -->
+                    <?php if(isset($_SESSION['search_query'])):?>
+                        <?php unset($_SESSION['search_query']) ?>
+                    <?php endif ?>
+                    <label for="genre_search">Genre</label>
+                    <!-- Generate genre-->
+                    <?php $genre_search = retrieve_genres($db, null) ?>
+                    <select name="genre_search" id="genre_search">
+                        <option value="none" 
+                        <?= (!isset($_SESSION['genre_search']) || 
+                        (isset($_SESSION['genre_search']) && ($_SESSION['genre_search'] == 'none')))  ? "selected" : ''?>>
+                            None
+                        </option>
+                        <?php foreach($genre_search as $genre_searches): ?>
+                            <option value="<?= $genre_searches['genre_id'] ?>"
+                            <?= (isset($_SESSION['genre_search']) && 
+                                ($_SESSION['genre_search'] == $genre_searches['genre_id'])) ? 'selected' : '' ?>>
+                                <?= ucfirst($genre_searches['genre_name']); ?>
+                            </option>
+                        <?php endforeach ?>
                     </select>
-
-                    <label for="order">
-                        <select name="order" id="order">
-                            <option value="ASC">ASC</option>
-                            <option value="DESC">DESC</option>
-                        </select>
-                    </label>
-                    <input type="radio" name="sort_type" value="date" onchange="this.form.submit();"/>Date
-                    <input type="radio" name="sort_type" value="title" onchange="this.form.submit();">Title
-
-                    <label for="orientation">Order:</label>
-                    <input type=
-                    <button type="submit"></button>
-                </form> FIXME --> 
-                <form action="index.php" method="post"> 
-                    <div>
-                        <label for="search">Search CHECK</label><!-- Check if you could dodge it -->
-                        <input type="text" name="search" id="Search" />
-                    </div>
-                    <input type="submit" name="submit" value="Search"/>
-                    <!-- Prototype form will be used for sortation-->
-                    <!-- <label for="sort_title">Title</label> 
-                    <select name="sort_title" id="sort_title" onchange="document.getElementById('sort_title').form.submit();">
-                        <option value="" selected></option>
-                        <option value="ASC">ASC</option>
-                        <option value="DESC">DESC</option>
-                    </select>
-                    <label for="sort_date">Date</label>
-                    <select name="sort_date" id="sort_date" onchange="this.form.submit();">
-                        <option value="" selected></option>
-                        <option value="ASC">ASC</option>
-                        <option value="DESC">DESC</option>
-                    </select> -->
-                </form>
+                    <input type="submit" name="submit_search" id="submit_search" value="Search"/>
+                    <?php if(isset($_SESSION['genre_search'])): ?>
+                        <?php unset($_SESSION['genre_search']) ?>
+                    <?php endif ?>
+                </form>        
             </div>
             <?php if(isset($_SESSION['client'])): ?>
                 <div><!-- Link for creating new post -->
@@ -411,8 +369,9 @@
                     </a>
                 </div>
                 <div> <!-- Drop Down for Genres -->
-                    <?php $genres = retrieve_genres($db, null) ?>
                     <form action="index.php" method="get">
+                        <!-- Generate genre-->
+                        <?php $genres = retrieve_genres($db, null) ?>
                         <label for="sort_genre">Genre</label>
                         <select name="sort_genre" id="sort_genre" onchange="this.form.submit();">
                             <option value="none" <?= (empty($_SESSION['genre_holder']) || ($_SESSION['genre_holder'] == 'none')) ? "selected" : '' ?>>
@@ -455,38 +414,42 @@
                     </form>
                 </div>
             <?php endif ?>
-            <div> <!-- Container in place holding the content -->
-                <?php foreach($results as $content): ?>
-                    <div>
-                        <a href="view_content.php?content_id=<?= $content['content_id'] ?>">
-                            <button type="button">View Full Post</button>
-                        </a>
-                        <?php if(isset($_SESSION['isadmin']) || (isset($_SESSION['client_id']) && ($_SESSION['client_id'] == $content['user_id']))):?>
-                            <a href="edit.php?content_id=<?=$content['content_id']?>">
-                                <button type="button">Edit</button>
+            <?php if(isset($no_content) && !empty($no_content)): ?>
+                <div><h1>No Content Available.</h1></div>
+            <?php else: ?>
+                <div> <!-- Container in place holding the content -->
+                    <?php foreach($results as $content): ?>
+                        <div>
+                            <a href="view_content.php?content_id=<?= $content['content_id'] ?>">
+                                <button type="button">View Full Post</button>
                             </a>
-                        <?php endif ?>
-                        <?php if(isset($content['images'])): ?>
-                            <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
-                            alt="<?= $content['image_name'] ?>"/>
-                        <?php endif ?>
-                        <h3><?= $content['title'] ?></h3>
-                        <?php if(isset($content['song_file'])): ?>
-                            <audio controls>
-                                <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>
-                            </audio>
-                        <?php endif ?>
-                        <p> <!-- Posted By-->
-                            <?php if(!empty($content['user_id'])): ?>
-                                @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
+                            <?php if(isset($_SESSION['isadmin']) || (isset($_SESSION['client_id']) && ($_SESSION['client_id'] == $content['user_id']))):?>
+                                <a href="edit.php?content_id=<?=$content['content_id']?>">
+                                    <button type="button">Edit</button>
+                                </a>
                             <?php endif ?>
-                        </p>
-                        <!-- add the comments preview here  with the link to view more not required, only for design. -->
-                    </div>
-                <?php endforeach ?>
-            </div>
+                            <?php if(isset($content['images'])): ?>
+                                <img src="data:image/*;base64,<?= base64_encode($content['images']) ?>" 
+                                alt="<?= $content['image_name'] ?>"/>
+                            <?php endif ?>
+                            <h3><?= $content['title'] ?></h3>
+                            <h4><?= $content['artist'] ?></h4>
+                            <?php if(isset($content['song_file'])): ?>
+                                <audio controls>
+                                    <source src="data:audio/*;base64,<?= base64_encode($content['song_file']) ?>" type="audio/mpeg"/>
+                                </audio>
+                            <?php endif ?>
+                            <p> <!-- Posted By-->
+                                <?php if(!empty($content['user_id'])): ?>
+                                    @<?= getUser($db, $content['admin_id'], $content['user_id']) ?>
+                                <?php endif ?>
+                            </p>
+                            <!-- add the comments preview here  with the link to view more not required, only for design. -->
+                        </div>
+                    <?php endforeach ?>
+                </div>
+            <?php endif ?>
         </main>
         <?php include("footer.php") ?>
     </body>
 </html>
-

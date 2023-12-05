@@ -95,7 +95,7 @@
                         $_SESSION['client'] = $result[0]['email'];
                         $_SESSION['client_id'] = $result[0]['user_id'];
                         
-                        header("Location: index.php");
+                        header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none.php");
                         exit();
     
                     } else { 
@@ -120,7 +120,7 @@
                         $_SESSION['client_id'] = $admin_result['admin_id'];
                         $_SESSION['client'] = $admin_result['email'];
     
-                        header("Location: index.php");
+                        header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none.php");
                         exit();
     
                     } else {
@@ -144,7 +144,7 @@
                         $_SESSION['client'] = $user_result['email'];
                         $_SESSION['client_id'] = $user_result['user_id'];
                         
-                        header("Location: index.php");
+                        header("Location: index.php?sort_genre=none&sort_title=none&date_sort=none.php");
                         exit();
 
                     } else {
@@ -181,7 +181,7 @@
                             <nav class="navbar navbar-expand-md justify-content-end">
                                 <ul class="navbar-nav">
                                     <li class="nav-item ms-3">
-                                        <a href="index.php" class="nav-link text-light">Home</a>
+                                        <a href="index.php?sort_genre=none&sort_title=none&date_sort=none" class="nav-link text-light">Home</a>
                                     </li>
                                     <?php if(isset($_SESSION['client'])): ?>
                                         <li class="nav-item ms-3">
@@ -220,13 +220,6 @@
                 </ul>
             </div>
         <?php endif ?>
-        <div>
-            <nav>
-                <ul> <!-- Check if there's a milestone for adding stuff here. if not then it's redundancy -->
-                    <a href="register.php"><button type="button">Register</button></a>
-                </ul>
-            </nav>
-        </div>
         <div>
             <form method="post" action="login.php">
                 <label for="email">Email/Username</label>
