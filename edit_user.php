@@ -38,18 +38,50 @@
                 $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $username = filter_input(INPUT_POST, 'username', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
                 $user_id = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
-                $query = "UPDATE users SET email = :email, username = :username WHERE user_id = :user_id";
-
-                $statement = $db->prepare($query);
-                $statement->bindValue(':email', $email, PDO::PARAM_STR);
-                $statement->bindValue(':username', $username, PDO::PARAM_STR);
-                $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-
-                if($statement->execute()) {
-                    header('Location: admin_cud_users.php');
-                    exit();
                 
-                } 
+                if(!empty($_POST['password']) && !empty($_POST['repassword'])) {
+                    $password = filter_input(INPUT_POST, 'password', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+                    $repassword = filter_input(INPUT_POST, 'repassword', FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+
+                    if($password == $repassword) {
+                        $query = "UPDATE users SET email = :email, username = :username, password = :password WHERE user_id = :user_id";
+                    
+                        $statement = $db->prepare($query);
+                        $statement->bindValue(':password', hash_password($password));
+                        $statement->bindValue(':email', $email, PDO::PARAM_STR);
+                        $statement->bindValue(':username', $username, PDO::PARAM_STR);
+                        $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+
+                        if($statement->execute()) {
+                            header('Location: admin_cud_users.php');
+                            exit();
+                        
+                        } 
+                        
+
+                    } else {
+                        $error[] = "Password does not match";
+
+                    }
+                } else {
+
+                    if(!empty($_POST['password']) || !empty($_POST['repassword'])) {
+                        $error[] = "Invalid empty fields.";
+                    } else {
+                        $query = "UPDATE users SET email = :email, username = :username WHERE user_id = :user_id";
+
+                        $statement = $db->prepare($query);
+                        $statement->bindValue(':email', $email, PDO::PARAM_STR);
+                        $statement->bindValue(':username', $username, PDO::PARAM_STR);
+                        $statement->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+    
+                        if($statement->execute()) {
+                            header('Location: admin_cud_users.php');
+                            exit();
+                        
+                        } 
+                    }
+                }
             } else {
                 $error[] = "Invalid empty fields!";
             }
@@ -125,6 +157,10 @@
                 <input type="email" id="email" name="email" value="<?= $results['email'] ?>"/>
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" value="<?= $results['username'] ?>"/>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password"  />
+                <label for="repassword">Re-type Password</label>
+                <input type="password" id="repassword" name="repassword" />
                 <input type="hidden" name="user_id" value="<?= $results['user_id']?>"/>
                 <input type="submit" name="submit" value="update" />
             </form>
